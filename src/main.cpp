@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <raymath.h>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -117,11 +118,6 @@ public:
         position.x += movement.x * speed * deltaTime;
         position.y += movement.y * speed * deltaTime;
 
-        if (position.x < 0) position.x = 0;
-        if (position.x > screenWidth) position.x = screenWidth;
-        if (position.y < 0) position.y = 0;
-        if (position.y > screenHeight) position.y = screenHeight;
-
         UpdateDirection();
 
         if (isMoving) {
@@ -150,9 +146,9 @@ public:
         }
     }
 
-    void Draw() {
+    void Draw(Vector2 cameraPosition) {
         if (!textureLoaded) {
-            DrawCircleV(position, 15, RED);
+            DrawCircleV(Vector2Subtract(position, cameraPosition), 15, RED);
             return;
         }
 
@@ -168,8 +164,8 @@ public:
         };
 
         Rectangle dest = {
-            position.x - frameWidth,
-            position.y - frameHeight,
+            position.x - frameWidth - cameraPosition.x,
+            position.y - frameHeight - cameraPosition.y,
             (float)frameWidth * 2,
             (float)frameHeight * 2
         };
@@ -183,7 +179,7 @@ public:
             WHITE
         );
 
-        DrawCircleV(position, 2, RED);
+        DrawCircleV(Vector2Subtract(position, cameraPosition), 2, RED);
     }
 
     void Unload() {
@@ -219,11 +215,11 @@ public:
         }
     }
 
-    void Draw() {
+    void Draw(Vector2 cameraPosition) {
         if (textureLoaded) {
             DrawTexturePro(background,
                            {0, 0, (float)background.width, (float)background.height},
-                           {0, 0, (float)screenWidth, (float)screenHeight},
+                           {0 - cameraPosition.x, 0 - cameraPosition.y, (float)background.width, (float)background.height},
                            {0, 0}, 0, WHITE);
         } else {
             DrawRectangle(0, 0, screenWidth, screenHeight, LIGHTGRAY);
@@ -250,10 +246,14 @@ public:
     Map map;
     bool initialized;
     bool showDebugInfo;
+    Vector2 cameraPosition;
+    Camera2D camera;
 
     Game() {
         initialized = false;
         showDebugInfo = true;
+        cameraPosition = {0, 0};
+        camera = {0};
     }
 
     void Initialize() {
@@ -270,93 +270,77 @@ public:
         player.LoadTextures();
         map.Load("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/map.png");
 
+        camera.target = player.position;
+        camera.offset = {(float)screenWidth / 2, (float)screenHeight / 2};
+        camera.rotation = 0.0f;
+        camera.zoom = 1.0f;
+
         SetTargetFPS(60);
         initialized = true;
     }
 
-    void Run() {
-        Initialize();
+    void UpdateCamera() {
+        camera.target = player.position;
 
-        if (!initialized) {
-            std::cout << "Game failed to initialize properly. Exiting." << std::endl;
-            return;
-        }
-
-        while (!WindowShouldClose()) {
-            if (IsKeyPressed(KEY_F1)) {
-                showDebugInfo = !showDebugInfo;
-            }
-
-            float deltaTime = GetFrameTime();
-            player.Move(deltaTime);
-
-            BeginDrawing();
-            ClearBackground(RAYWHITE);
-
-            map.Draw();
-            player.Draw();
-
-            if (showDebugInfo) {
-                DrawText("IUT Chronicles - RPG", 10, 10, 20, BLACK);
-                DrawText(TextFormat("FPS: %d", GetFPS()), 10, 40, 16, BLACK);
-                DrawText("Press F1 to toggle debug info", 10, screenHeight - 30, 16, BLACK);
-
-                if (player.textureLoaded) {
-                    DrawText("Sprite Sheet Grid:", screenWidth - 200, 10, 16, BLACK);
-
-                    int gridX = screenWidth - 200;
-                    int gridY = 30;
-                    int gridScale = 2;
-
-                    DrawTexturePro(
-                        player.spriteSheet,
-                        {0, 0, (float)player.spriteSheet.width, (float)player.spriteSheet.height},
-                        {(float)gridX, (float)gridY,
-                         (float)player.spriteSheet.width * gridScale,
-                         (float)player.spriteSheet.height * gridScale},
-                        {0, 0}, 0, WHITE
-                    );
-
-                    for (int i = 0; i <= player.spriteCols; i++) {
-                        DrawLine(
-                            gridX + i * player.frameWidth * gridScale,
-                            gridY,
-                            gridX + i * player.frameWidth * gridScale,
-                            gridY + player.spriteSheet.height * gridScale,
-                            RED
-                        );
-                    }
-
-                    for (int i = 0; i <= player.spriteRows; i++) {
-                        DrawLine(
-                            gridX,
-                            gridY + i * player.frameHeight * gridScale,
-                            gridX + player.spriteSheet.width * gridScale,
-                            gridY + i * player.frameHeight * gridScale,
-                            RED
-                        );
-                    }
-
-                    int currentRow = player.GetDirectionRow();
-                    if (currentRow < player.spriteRows) {
-                        DrawRectangleLines(
-                            gridX + player.currentFrame * player.frameWidth * gridScale,
-                            gridY + currentRow * player.frameHeight * gridScale,
-                            player.frameWidth * gridScale,
-                            player.frameHeight * gridScale,
-                            GREEN
-                        );
-                    }
-                }
-            }
-
-            EndDrawing();
-        }
-
-        map.Unload();
-        player.Unload();
-        CloseWindow();
+        if (camera.target.x < screenWidth / 2) camera.target.x = screenWidth / 2;
+        if (camera.target.y < screenHeight / 2) camera.target.y = screenHeight / 2;
+        if (camera.target.x > map.background.width - screenWidth / 2) camera.target.x = map.background.width - screenWidth / 2;
+        if (camera.target.y > map.background.height - screenHeight / 2) camera.target.y = map.background.height - screenHeight / 2;
     }
+
+void Run() {
+    Initialize();
+
+    if (!initialized) {
+        std::cout << "Game failed to initialize properly. Exiting." << std::endl;
+        return;
+    }
+
+    while (!WindowShouldClose()) {
+        if (IsKeyPressed(KEY_F1)) {
+            showDebugInfo = !showDebugInfo;
+        }
+
+        if (IsKeyPressed(KEY_EQUAL)) {
+            camera.zoom += 0.1f;
+        }
+
+        if (IsKeyPressed(KEY_MINUS)) {
+            camera.zoom -= 0.1f;
+            if (camera.zoom < 0.1f) camera.zoom = 0.1f;
+        }
+
+        float deltaTime = GetFrameTime();
+        player.Move(deltaTime);
+        UpdateCamera();
+
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        BeginMode2D(camera);
+
+        map.Draw(cameraPosition);
+        player.Draw(cameraPosition);
+
+        EndMode2D();
+
+        if (showDebugInfo) {
+            DrawText("IUT Chronicles - RPG", 10, 10, 20, BLACK);
+            DrawText(TextFormat("FPS: %d", GetFPS()), 10, 40, 16, BLACK);
+            DrawText("Press F1 to toggle debug info", 10, screenHeight - 30, 16, BLACK);
+            DrawText("Press + to zoom in, - to zoom out", 10, screenHeight - 50, 16, BLACK);
+        }
+
+        EndDrawing();
+    }
+
+    map.Unload();
+    player.Unload();
+    CloseWindow();
+}
+
+// ...existing code...
+
 };
 
 int main() {

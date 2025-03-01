@@ -4,6 +4,10 @@
 #include <string>
 #include <iostream>
 
+
+//64 line and 271 line are needed to be changed
+
+
 // Screen dimensions
 int screenWidth = 1000;
 int screenHeight = 950;
@@ -241,108 +245,107 @@ public:
 
 // Game class
 class Game {
-public:
-    Player player;
-    Map map;
-    bool initialized;
-    bool showDebugInfo;
-    Vector2 cameraPosition;
-    Camera2D camera;
-
-    Game() {
-        initialized = false;
-        showDebugInfo = true;
-        cameraPosition = {0, 0};
-        camera = {0};
-    }
-
-    void Initialize() {
-        SetTraceLogLevel(LOG_DEBUG);
-        InitWindow(screenWidth, screenHeight, "IUT Chronicles");
-
-        if (!IsWindowReady()) {
-            std::cout << "Failed to initialize window!" << std::endl;
-            return;
+    public:
+        Player player;
+        Map map;
+        bool initialized;
+        bool showDebugInfo;
+        Vector2 cameraPosition;
+        Camera2D camera;
+    
+        Game() {
+            initialized = false;
+            showDebugInfo = true;
+            cameraPosition = {0, 0};
+            camera = {0};
         }
-
-        player.position = {(float)screenWidth / 2, (float)screenHeight / 2};
-
-        player.LoadTextures();
-        map.Load("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/map.png");
-
-        camera.target = player.position;
-        camera.offset = {(float)screenWidth / 2, (float)screenHeight / 2};
-        camera.rotation = 0.0f;
-        camera.zoom = 1.0f;
-
-        SetTargetFPS(60);
-        initialized = true;
-    }
-
-    void UpdateCamera() {
-        camera.target = player.position;
-
-        if (camera.target.x < screenWidth / 2) camera.target.x = screenWidth / 2;
-        if (camera.target.y < screenHeight / 2) camera.target.y = screenHeight / 2;
-        if (camera.target.x > map.background.width - screenWidth / 2) camera.target.x = map.background.width - screenWidth / 2;
-        if (camera.target.y > map.background.height - screenHeight / 2) camera.target.y = map.background.height - screenHeight / 2;
-    }
-
-void Run() {
-    Initialize();
-
-    if (!initialized) {
-        std::cout << "Game failed to initialize properly. Exiting." << std::endl;
-        return;
-    }
-
-    while (!WindowShouldClose()) {
-        if (IsKeyPressed(KEY_F1)) {
-            showDebugInfo = !showDebugInfo;
+    
+        void Initialize() {
+            SetTraceLogLevel(LOG_DEBUG);
+            InitWindow(GetScreenWidth(), GetScreenHeight(), "IUT Chronicles");
+    
+            if (!IsWindowReady()) {
+                std::cout << "Failed to initialize window!" << std::endl;
+                return;
+            }
+    
+            player.position = {(float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2};
+    
+            player.LoadTextures();
+            map.Load("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/map.png");
+    
+            camera.target = player.position;
+            camera.offset = {(float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2};
+            camera.rotation = 0.0f;
+            camera.zoom = 1.0f;
+    
+            SetTargetFPS(60);
+            initialized = true;
         }
-
-        if (IsKeyPressed(KEY_EQUAL)) {
-            camera.zoom += 0.1f;
+    
+        void UpdateCamera() {
+            camera.target = player.position;
+    
+            if (camera.target.x < GetScreenWidth() / 2) camera.target.x = GetScreenWidth() / 2;
+            if (camera.target.y < GetScreenHeight() / 2) camera.target.y = GetScreenHeight() / 2;
+            if (camera.target.x > map.background.width - GetScreenWidth() / 2) camera.target.x = map.background.width - GetScreenWidth() / 2;
+            if (camera.target.y > map.background.height - GetScreenHeight() / 2) camera.target.y = map.background.height - GetScreenHeight() / 2;
         }
-
-        if (IsKeyPressed(KEY_MINUS)) {
-            camera.zoom -= 0.1f;
-            if (camera.zoom < 0.1f) camera.zoom = 0.1f;
+    
+        void Run() {
+            Initialize();
+    
+            if (!initialized) {
+                std::cout << "Game failed to initialize properly. Exiting." << std::endl;
+                return;
+            }
+    
+            while (!WindowShouldClose()) {
+                if (IsKeyPressed(KEY_F1)) {
+                    showDebugInfo = !showDebugInfo;
+                }
+    
+                if (IsKeyPressed(KEY_EQUAL)) {
+                    camera.zoom += 0.1f;
+                }
+    
+                if (IsKeyPressed(KEY_MINUS)) {
+                    camera.zoom -= 0.1f;
+                    if (camera.zoom < 0.1f) camera.zoom = 0.1f;
+                }
+    
+                float deltaTime = GetFrameTime();
+                player.Move(deltaTime);
+                UpdateCamera();
+    
+                BeginDrawing();
+                ClearBackground(RAYWHITE);
+    
+                BeginMode2D(camera);
+    
+                map.Draw(cameraPosition);
+                player.Draw(cameraPosition);
+    
+                EndMode2D();
+    
+                if (showDebugInfo) {
+                    DrawText("IUT Chronicles - RPG", 10, 10, 20, BLACK);
+                    DrawText(TextFormat("FPS: %d", GetFPS()), 10, 40, 16, BLACK);
+                    DrawText("Press F1 to toggle debug info", 10, GetScreenHeight() - 30, 16, BLACK);
+                    DrawText("Press + to zoom in, - to zoom out", 10, GetScreenHeight() - 50, 16, BLACK);
+                }
+    
+                EndDrawing();
+            }
+    
+            map.Unload();
+            player.Unload();
+            CloseWindow();
         }
+    };
 
-        float deltaTime = GetFrameTime();
-        player.Move(deltaTime);
-        UpdateCamera();
 
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-
-        BeginMode2D(camera);
-
-        map.Draw(cameraPosition);
-        player.Draw(cameraPosition);
-
-        EndMode2D();
-
-        if (showDebugInfo) {
-            DrawText("IUT Chronicles - RPG", 10, 10, 20, BLACK);
-            DrawText(TextFormat("FPS: %d", GetFPS()), 10, 40, 16, BLACK);
-            DrawText("Press F1 to toggle debug info", 10, screenHeight - 30, 16, BLACK);
-            DrawText("Press + to zoom in, - to zoom out", 10, screenHeight - 50, 16, BLACK);
-        }
-
-        EndDrawing();
-    }
-
-    map.Unload();
-    player.Unload();
-    CloseWindow();
-}
-
-// ...existing code...
-
-};
-
+    
 int main() {
     try {
         Game game;

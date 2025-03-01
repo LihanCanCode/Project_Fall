@@ -47,7 +47,7 @@ public:
     bool isMoving;
 
     Player() {
-        position = {100, 100};
+        position = {135, 2200};
         speed = 100.0f;
         currentDirection = DOWN;
         lastDirection = DOWN;
@@ -108,25 +108,39 @@ public:
 
     void Move(float deltaTime) {
         Vector2 movement = {0, 0};
-
+    
         if (IsKeyDown(KEY_RIGHT)) movement.x += 1;
         if (IsKeyDown(KEY_LEFT)) movement.x -= 1;
         if (IsKeyDown(KEY_UP)) movement.y -= 1;
         if (IsKeyDown(KEY_DOWN)) movement.y += 1;
-
+    
         if (movement.x != 0 && movement.y != 0) {
             movement.x *= 0.7071f;
             movement.y *= 0.7071f;
         }
-
+    
         position.x += movement.x * speed * deltaTime;
         position.y += movement.y * speed * deltaTime;
+    
+        //boundary checking
+        if (position.x < 135) position.x = 135;
+        if (position.y < 56) position.y = 56;
+        if (position.x > 2200) position.x = 2200;
+        if (position.y > 2200) position.y = 2200;
 
+        
+        //Nicher math e jabe na
+        
+    
+        
+        // Print the updated coordinates
+        std::cout << "Player position: (" << position.x << ", " << position.y << ")" << std::endl;
+    
         UpdateDirection();
-
+    
         if (isMoving) {
             timer += deltaTime;
-
+    
             if (timer >= frameTime) {
                 timer = 0.0f;
                 currentFrame = (currentFrame + 1) % frameCount;
@@ -135,6 +149,7 @@ public:
             currentFrame = 0;
         }
     }
+
 
     int GetDirectionRow() {
         switch (currentDirection) {
@@ -152,39 +167,53 @@ public:
 
     void Draw(Vector2 cameraPosition) {
         if (!textureLoaded) {
+            // If texture is not loaded, draw a red circle around the player
             DrawCircleV(Vector2Subtract(position, cameraPosition), 15, RED);
-            return;
+        } else {
+            // Draw the player's sprite (existing code)
+            int row = GetDirectionRow();
+    
+            DrawText(TextFormat("Direction: %d, Frame: %d", row, currentFrame), 10, 70, 16, BLACK);
+    
+            Rectangle source = {
+                (float)(currentFrame * frameWidth-10),
+                (float)(row * frameHeight),
+                (float)frameWidth,
+                (float)frameHeight
+            };
+    
+            Rectangle dest = {
+                position.x - frameWidth - cameraPosition.x,
+                position.y - frameHeight - cameraPosition.y,
+                (float)frameWidth * 2,
+                (float)frameHeight * 2
+            };
+    
+            DrawTexturePro(
+                spriteSheet,
+                source,
+                dest,
+                {0, 0},
+                0.0f,
+                WHITE
+            );
+    
+            // Draw a rectangle around the player character
+            Rectangle playerRect = {
+                position.x - cameraPosition.x - frameWidth / 2,
+                position.y - cameraPosition.y - frameHeight / 2,
+                (float)frameWidth,
+                (float)frameHeight
+            };
+    
+            // Draw the rectangle in green
+            DrawRectangleLines(playerRect.x, playerRect.y, playerRect.width, playerRect.height, GREEN);
+    
+            // Optional: Draw the red dot as a marker for the player's position
+            DrawCircleV(Vector2Subtract(position, cameraPosition), 2, RED);
         }
-
-        int row = GetDirectionRow();
-
-        DrawText(TextFormat("Direction: %d, Frame: %d", row, currentFrame), 10, 70, 16, BLACK);
-
-        Rectangle source = {
-            (float)(currentFrame * frameWidth-10),
-            (float)(row * frameHeight),
-            (float)frameWidth,
-            (float)frameHeight
-        };
-
-        Rectangle dest = {
-            position.x - frameWidth - cameraPosition.x,
-            position.y - frameHeight - cameraPosition.y,
-            (float)frameWidth * 2,
-            (float)frameHeight * 2
-        };
-
-        DrawTexturePro(
-            spriteSheet,
-            source,
-            dest,
-            {0, 0},
-            0.0f,
-            WHITE
-        );
-
-        DrawCircleV(Vector2Subtract(position, cameraPosition), 2, RED);
     }
+    
 
     void Unload() {
         if (textureLoaded) {
@@ -263,22 +292,22 @@ class Game {
         void Initialize() {
             SetTraceLogLevel(LOG_DEBUG);
             InitWindow(GetScreenWidth(), GetScreenHeight(), "IUT Chronicles");
-    
+        
             if (!IsWindowReady()) {
                 std::cout << "Failed to initialize window!" << std::endl;
                 return;
             }
-    
-            player.position = {(float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2};
-    
+        
+            player.position = {135, 2200};
+        
             player.LoadTextures();
             map.Load("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/map.png");
-    
+        
             camera.target = player.position;
             camera.offset = {(float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2};
             camera.rotation = 0.0f;
             camera.zoom = 1.0f;
-    
+        
             SetTargetFPS(60);
             initialized = true;
         }
@@ -294,50 +323,53 @@ class Game {
     
         void Run() {
             Initialize();
-    
+        
             if (!initialized) {
                 std::cout << "Game failed to initialize properly. Exiting." << std::endl;
                 return;
             }
-    
+        
             while (!WindowShouldClose()) {
                 if (IsKeyPressed(KEY_F1)) {
                     showDebugInfo = !showDebugInfo;
                 }
-    
+        
                 if (IsKeyPressed(KEY_EQUAL)) {
                     camera.zoom += 0.1f;
                 }
-    
+        
                 if (IsKeyPressed(KEY_MINUS)) {
                     camera.zoom -= 0.1f;
                     if (camera.zoom < 0.1f) camera.zoom = 0.1f;
                 }
-    
+        
                 float deltaTime = GetFrameTime();
                 player.Move(deltaTime);
                 UpdateCamera();
-    
+        
                 BeginDrawing();
                 ClearBackground(RAYWHITE);
-    
+        
                 BeginMode2D(camera);
-    
+        
                 map.Draw(cameraPosition);
                 player.Draw(cameraPosition);
-    
+        
                 EndMode2D();
-    
+        
                 if (showDebugInfo) {
                     DrawText("IUT Chronicles - RPG", 10, 10, 20, BLACK);
                     DrawText(TextFormat("FPS: %d", GetFPS()), 10, 40, 16, BLACK);
-                    DrawText("Press F1 to toggle debug info", 10, GetScreenHeight() - 30, 16, BLACK);
-                    DrawText("Press + to zoom in, - to zoom out", 10, GetScreenHeight() - 50, 16, BLACK);
+                    //DrawText("Press F1 to toggle debug info", 10, GetScreenHeight() - 30, 16, BLACK);
+                    //DrawText("Press + to zoom in, - to zoom out", 10, GetScreenHeight() - 50, 16, BLACK);
                 }
-    
+        
+                // Draw the player's coordinates in the right corner
+                DrawText(TextFormat("Player position: (%.2f, %.2f)", player.position.x, player.position.y), GetScreenWidth() - 300, 10, 20, BLACK);
+        
                 EndDrawing();
             }
-    
+        
             map.Unload();
             player.Unload();
             CloseWindow();

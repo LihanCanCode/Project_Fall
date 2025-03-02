@@ -1,4 +1,3 @@
-
 #ifndef GAME_H
 #define GAME_H
 
@@ -15,6 +14,10 @@ public:
     bool showDebugInfo;
     Vector2 cameraPosition;
     Camera2D camera;
+    bool showConversation;
+    Texture2D conversationTexture;
+    Vector2 conversationPosition;
+    
 
     Game();
     void Initialize();

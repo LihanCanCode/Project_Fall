@@ -3,7 +3,14 @@
 #include <vector>
 using namespace std;
 
-vector<Rectangle> buildings = {Rectangle{402, 2010, 90, 95}};
+vector<Rectangle> buildings = {Rectangle{402, 2010, 90, 95},//idle 
+                                Rectangle{422,640,280,550}, //nicher math
+                                Rectangle{240,2075,1405,200},   //lake er bam
+                                Rectangle{1185,855,235,250},    //mosque
+                                Rectangle{700,640,480,100},//lake er upor
+                                Rectangle{1274,640,370,100},//lake er dan
+                                Rectangle{1464,735,180,400}//lake er dan niche
+                                };
 Rectangle idleRect = {402, 2010, 64, 64}; // Define the idle character's collision rectangle
 
 void ResolvePlayerBuildingCollision(Rectangle& destrect, const vector<Rectangle>& buildings) {

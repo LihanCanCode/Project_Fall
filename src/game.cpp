@@ -9,9 +9,19 @@ vector<Rectangle> buildings = {Rectangle{402, 2010, 90, 95},//idle
                                 Rectangle{1185,855,235,250},    //mosque
                                 Rectangle{700,640,480,100},//lake er upor
                                 Rectangle{1274,640,370,100},//lake er dan
-                                Rectangle{1464,735,180,400}//lake er dan niche
-                                };
-Rectangle idleRect = {402, 2010, 64, 64}; // Define the idle character's collision rectangle
+                                Rectangle{1464,735,180,400},//lake er dan niche
+                                Rectangle{810, 1190,520,225},
+                                Rectangle{1473,1190,180,225},
+                                Rectangle{1695, 1530, 520, 460},//right e hall
+                                Rectangle{1309, 1496, 320, 180},//cds
+                                Rectangle{1733, 1115, 500, 240},//right mid hall
+                                Rectangle{1918, 1080, 280, 40},//right mid hall upor
+                                Rectangle{1722, 634, 500, 300},//right mid hall dan
+                                Rectangle{1399, 56, 270, 270}, //medical
+                                Rectangle{100, 70, 550, 280}, //medical
+                                Rectangle{420,1190, 270, 215}
+                                 };
+Rectangle idleRect = {1142, 1045, 70, 95}; // Define the idle character's collision rectangle
 
 void ResolvePlayerBuildingCollision(Rectangle& destrect, const vector<Rectangle>& buildings) {
     // Loop through all buildings to check for collision
@@ -50,7 +60,7 @@ void ResolvePlayerBuildingCollision(Rectangle& destrect, const vector<Rectangle>
     }
 }
 
-void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect) {
+void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect, Vector2& conversationPosition, bool& showConversation) {
     // Calculate the overlap between player and idle character
     float overlapX = (playerRect.x + playerRect.width / 2) - (idleRect.x + idleRect.width / 2);
     float overlapY = (playerRect.y + playerRect.height / 2) - (idleRect.y + idleRect.height / 2);
@@ -84,6 +94,10 @@ void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect
                 playerRect.y -= penetrationY;  // Move player up
             }
         }
+
+        // Set conversation position and show the image
+        conversationPosition = {playerRect.x-50, playerRect.y -280}; // Slightly above the player
+        showConversation = true;
     }
 }
 
@@ -92,6 +106,8 @@ Game::Game() {
     showDebugInfo = true;
     cameraPosition = {0, 0};
     camera = {0};
+    showConversation = false;  // Initialize the conversation flag
+    conversationPosition = {0, 0};  // Initialize the conversation position
 }
 
 void Game::Initialize() {
@@ -116,6 +132,9 @@ void Game::Initialize() {
     //collision rect for player 
     SetTargetFPS(60);
     initialized = true;
+
+    // Load the conversation texture
+    conversationTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation1.png");
 }
 
 void Game::UpdateCamera() {
@@ -150,14 +169,17 @@ void Game::Run() {
         }
 
         float deltaTime = GetFrameTime();
-        player.Move(deltaTime);
+        
+        if (!showConversation) { // Only move the player if conversation is NOT showing
+            player.Move(deltaTime);
+        }
 
         // Adjust the collision rectangle to better fit the player's sprite
         Rectangle playerCollisionRect = {player.position.x, player.position.y, 25, 25};
         
         // Perform collision detection and resolution
         ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
-        ResolvePlayerIdleCollision(playerCollisionRect, idleRect);
+        ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation);
         
         // Update player position based on the modified collision rectangle
         player.position.x = playerCollisionRect.x;
@@ -174,7 +196,7 @@ void Game::Run() {
         player.Draw(cameraPosition);
         Image gg = LoadImage("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/idle.png");
         Texture2D texture = LoadTextureFromImage(gg);
-        Rectangle source = {0.0f, 0.0f, (float)texture.width-10, (float)texture.height+20};
+        Rectangle source = {0.0f, 0.0f, (float)texture.width-10, (float)texture.height};
         
         //drawing rectangle for collision check
         DrawRectangleLines(idleRect.x, idleRect.y, idleRect.width, idleRect.height, RED);
@@ -185,7 +207,22 @@ void Game::Run() {
 
         DrawRectangleLines(1274,640,370,200,RED);
         DrawRectangleLines(1464,735,180,350,RED);
-                                
+        DrawRectangleLines(810, 1190,500,225,RED);
+        DrawRectangleLines(1473,1200,200,225,RED);
+        DrawRectangleLines(1695, 1530, 500, 460,RED);
+        DrawRectangleLines(1309, 1496, 320, 180,RED);
+        DrawRectangleLines(1733, 1115, 500, 240,RED);
+        DrawRectangleLines(1918, 1080, 280, 40,RED);
+        DrawRectangleLines(1722, 634, 500, 300,RED);
+        DrawRectangleLines(1399, 56, 270, 270,RED);
+        DrawRectangleLines(100, 70, 550, 280,RED);
+        DrawRectangleLines(420,1190, 270, 215,RED);
+
+        // If conversation is active, draw the image
+        if (showConversation) {
+            DrawTexture(conversationTexture, conversationPosition.x, conversationPosition.y, WHITE);
+        }
+
         DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
         EndMode2D();
 
@@ -195,11 +232,20 @@ void Game::Run() {
             DrawText(TextFormat("Player position: (%.2f, %.2f)", player.position.x, player.position.y), GetScreenWidth() - 300, 10, 20, BLACK);
         }
 
+        // Print the current state of showConversation at the top-right corner
+        DrawText(TextFormat("Conversation: %s", showConversation ? "ON" : "OFF"), GetScreenWidth() - 200, 50, 20, BLACK);
+
+        // If Enter is pressed, hide the conversation
+        if (showConversation && IsKeyPressed(KEY_ENTER)) {
+            showConversation = false;
+        }
+
         EndDrawing();
     }
 
     map.Unload();
     player.Unload();
     idle.Unload(); // Unload the idle character texture
+    UnloadTexture(conversationTexture); // Unload the conversation texture
     CloseWindow();
 }

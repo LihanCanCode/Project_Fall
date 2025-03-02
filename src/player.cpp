@@ -1,114 +1,49 @@
-#include "player.h"
-#include "bullet.h"
-#include <algorithm>
+#ifndef PLAYER_H
+#define PLAYER_H
 
-Player::Player(float x, float y, float width, float height)
-    : x(x), y(y), width(width), height(height), speed(5.0f), health(5), color(BLUE) {}
+#include <raylib.h>
+#include <raymath.h>
 
-void Player::Update(const std::vector<Rectangle>& boundaries, std::vector<NPC>& npcs, const Gate& gate, bool& changeMap) {
-    float newX = x;
-    float newY = y;
+enum Direction {
+    DOWN = 0,
+    LEFT = 1,
+    RIGHT = 2,
+    UP = 3,
+    DOWN_LEFT = 4,
+    DOWN_RIGHT = 5,
+    UP_LEFT = 6,
+    UP_RIGHT = 7,
+    IDLE = 8
+};
 
-    if (IsKeyDown(KEY_W)) {
-        newY -= speed;
-    }
-    if (IsKeyDown(KEY_S)) {
-        newY += speed;
-    }
-    if (IsKeyDown(KEY_A)) {
-        newX -= speed;
-    }
-    if (IsKeyDown(KEY_D)) {
-        newX += speed;
-    }
+class Player {
+public:
+    Vector2 position;
+    float speed;
+    Texture2D spriteSheet;
+    bool textureLoaded;
 
-    Rectangle newRect = {newX, newY, width, height};
-    bool collision = false;
-    for (const auto& boundary : boundaries) {
-        if (CheckCollisionRecs(newRect, boundary)) {
-            collision = true;
-            break;
-        }
-    }
+    int frameCount;
+    int currentFrame;
+    float frameTime;
+    float timer;
+    int frameWidth;
+    int frameHeight;
+    int spriteRows;
+    int spriteCols;
 
-    for (auto& npc : npcs) {
-        if (CheckCollisionRecs(newRect, npc.GetRect())) {
-            collision = true;
-            DecrementHealth();
-            break;
-        }
-    }
+    Direction currentDirection;
+    Direction lastDirection;
+    bool isMoving;
 
-    if (!collision) {
-        x = newX;
-        y = newY;
-    }
+    Player();
+    virtual void LoadTextures();
+    void UpdateDirection();
+    virtual void Move(float deltaTime);
+    int GetDirectionRow();
+    virtual void Draw(Vector2 cameraPosition);
+    void Unload();
+    virtual ~Player();
+};
 
-    // Check for gate collision
-    if (CheckCollisionRecs(GetRect(), gate.GetRect())) {
-        changeMap = true;
-    }
-
-    // Update bullets
-    for (auto& bullet : bullets) {
-        bullet.Update();
-    }
-
-    // Remove bullets that are off-screen
-    bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [screenHeight = GetScreenHeight()](const Bullet& bullet) {
-        return bullet.IsOffScreen(screenHeight);
-    }), bullets.end());
-
-    // Check for bullet-NPC collisions
-    for (auto& bullet : bullets) {
-        for (auto it = npcs.begin(); it != npcs.end(); ) {
-            if (CheckCollisionRecs(bullet.GetRect(), it->GetRect())) {
-                it = npcs.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-
-    // Shoot bullet
-    if (IsKeyPressed(KEY_B)) {
-        Shoot();
-    }
-}
-
-void Player::Draw() const {
-    DrawRectangle(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height), color);
-    for (const auto& bullet : bullets) {
-        bullet.Draw();
-    }
-}
-
-void Player::AddItem(const Item& item) {
-    inventory.push_back(item);
-}
-
-Rectangle Player::GetRect() const {
-    return Rectangle{x, y, width, height};
-}
-
-float Player::GetX() const {
-    return x;
-}
-
-float Player::GetY() const {
-    return y;
-}
-
-void Player::DecrementHealth() {
-    if (health > 0) {
-        health--;
-    }
-}
-
-int Player::GetHealth() const {
-    return health;
-}
-
-void Player::Shoot() {
-    bullets.emplace_back(x + width / 2 - 2.5f, y, 10.0f);
-}
+#endif // PLAYER_H

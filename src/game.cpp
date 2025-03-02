@@ -174,10 +174,19 @@ void Game::Run() {
         player.Draw(cameraPosition);
         Image gg = LoadImage("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/idle.png");
         Texture2D texture = LoadTextureFromImage(gg);
-        Rectangle source = {0.0f, 0.0f, (float)texture.width, (float)texture.height};
+        Rectangle source = {0.0f, 0.0f, (float)texture.width-10, (float)texture.height+20};
+        
+        //drawing rectangle for collision check
         DrawRectangleLines(idleRect.x, idleRect.y, idleRect.width, idleRect.height, RED);
-        DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
+        DrawRectangleLines(422,640,270,550, RED);
+        DrawRectangleLines(240,2051,1405,200, RED);
+        DrawRectangleLines(1185,855,220,250, RED);
+        DrawRectangleLines(700,640,464,100, RED);
 
+        DrawRectangleLines(1274,640,370,200,RED);
+        DrawRectangleLines(1464,735,180,350,RED);
+                                
+        DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
         EndMode2D();
 
         if (showDebugInfo) {

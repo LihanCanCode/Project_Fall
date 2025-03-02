@@ -60,7 +60,7 @@ void ResolvePlayerBuildingCollision(Rectangle& destrect, const vector<Rectangle>
     }
 }
 
-void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect, Vector2& conversationPosition, bool& showConversation) {
+void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect, Vector2& conversationPosition, bool& showConversation, int& conversationStep, bool& firstCollisionOccurred) {
     // Calculate the overlap between player and idle character
     float overlapX = (playerRect.x + playerRect.width / 2) - (idleRect.x + idleRect.width / 2);
     float overlapY = (playerRect.y + playerRect.height / 2) - (idleRect.y + idleRect.height / 2);
@@ -96,8 +96,17 @@ void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect
         }
 
         // Set conversation position and show the image
-        conversationPosition = {playerRect.x-50, playerRect.y -280}; // Slightly above the player
+        conversationPosition = {playerRect.x - 50, playerRect.y - 280}; // Slightly above the player
         showConversation = true;
+
+        // If this is the first collision, set the conversation step to 0
+        if (!firstCollisionOccurred) {
+            conversationStep = 0;
+            firstCollisionOccurred = true;
+        } else {
+            // If this is a subsequent collision, set the conversation step to 2
+            conversationStep = 2;
+        }
     }
 }
 
@@ -108,6 +117,8 @@ Game::Game() {
     camera = {0};
     showConversation = false;  // Initialize the conversation flag
     conversationPosition = {0, 0};  // Initialize the conversation position
+    conversationStep = 0;  // Initialize the conversation step
+    firstCollisionOccurred = false;  // Initialize the first collision flag
 }
 
 void Game::Initialize() {
@@ -133,8 +144,12 @@ void Game::Initialize() {
     SetTargetFPS(60);
     initialized = true;
 
-    // Load the conversation texture
-    conversationTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation1.png");
+    // Load the conversation textures
+    conversationTexture1 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation1.png");
+    conversationTexture2 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation2.png");
+    conversationTexture3 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation3.png");
+    conversationTexture4 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation4.png");
+
 }
 
 void Game::UpdateCamera() {
@@ -179,7 +194,7 @@ void Game::Run() {
         
         // Perform collision detection and resolution
         ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
-        ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation);
+        ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation, conversationStep, firstCollisionOccurred);
         
         // Update player position based on the modified collision rectangle
         player.position.x = playerCollisionRect.x;
@@ -218,9 +233,15 @@ void Game::Run() {
         DrawRectangleLines(100, 70, 550, 280,RED);
         DrawRectangleLines(420,1190, 270, 215,RED);
 
-        // If conversation is active, draw the image
+        // If conversation is active, draw the appropriate image
         if (showConversation) {
-            DrawTexture(conversationTexture, conversationPosition.x, conversationPosition.y, WHITE);
+            if (conversationStep == 0) {
+                DrawTexture(conversationTexture1, conversationPosition.x+60, conversationPosition.y-50, WHITE);
+            } else if (conversationStep == 1) {
+                DrawTexture(conversationTexture2, conversationPosition.x+60, conversationPosition.y-50, WHITE);
+            } else if (conversationStep == 2) {
+                DrawTexture(conversationTexture3, conversationPosition.x+60, conversationPosition.y-50, WHITE);
+            }
         }
 
         DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
@@ -235,9 +256,17 @@ void Game::Run() {
         // Print the current state of showConversation at the top-right corner
         DrawText(TextFormat("Conversation: %s", showConversation ? "ON" : "OFF"), GetScreenWidth() - 200, 50, 20, BLACK);
 
-        // If Enter is pressed, hide the conversation
+        // If Enter is pressed, switch to the next conversation step or hide the conversation
         if (showConversation && IsKeyPressed(KEY_ENTER)) {
-            showConversation = false;
+            if (conversationStep == 0) {
+                conversationStep = 1;
+            } else if (conversationStep == 1) {
+                showConversation = false;
+                conversationStep = 2;
+            } else if (conversationStep == 2) {
+                showConversation = false;
+                conversationStep = 3;
+            }
         }
 
         EndDrawing();
@@ -246,6 +275,8 @@ void Game::Run() {
     map.Unload();
     player.Unload();
     idle.Unload(); // Unload the idle character texture
-    UnloadTexture(conversationTexture); // Unload the conversation texture
+    UnloadTexture(conversationTexture1); // Unload the first conversation texture
+    UnloadTexture(conversationTexture2); // Unload the second conversation texture
+    UnloadTexture(conversationTexture3); // Unload the third conversation texture
     CloseWindow();
 }

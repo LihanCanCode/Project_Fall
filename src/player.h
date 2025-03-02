@@ -2,33 +2,48 @@
 #define PLAYER_H
 
 #include <raylib.h>
-#include <vector>
-#include "item.h"
-#include "npc.h"
-#include "bullet.h"
-#include "gate.h" // Include the Gate header
+#include <raymath.h>
+
+enum Direction {
+    DOWN = 0,
+    LEFT = 1,
+    RIGHT = 2,
+    UP = 3,
+    DOWN_LEFT = 4,
+    DOWN_RIGHT = 5,
+    UP_LEFT = 6,
+    UP_RIGHT = 7,
+    IDLE = 8
+};
 
 class Player {
 public:
-    Player(float x, float y, float width, float height);
-    void Update(const std::vector<Rectangle>& boundaries, std::vector<NPC>& npcs, const Gate& gate, bool& changeMap);
-    void Draw() const;
-    void AddItem(const Item& item);
-    Rectangle GetRect() const;
-    float GetX() const;
-    float GetY() const;
-    void DecrementHealth();
-    int GetHealth() const;
-    void Shoot();
-
-private:
-    float x, y;
-    float width, height;
+    Vector2 position;
     float speed;
-    int health;
-    Color color;
-    std::vector<Item> inventory;
-    std::vector<Bullet> bullets;
+    Texture2D spriteSheet;
+    bool textureLoaded;
+
+    int frameCount;
+    int currentFrame;
+    float frameTime;
+    float timer;
+    int frameWidth;
+    int frameHeight;
+    int spriteRows;
+    int spriteCols;
+
+    Direction currentDirection;
+    Direction lastDirection;
+    bool isMoving;
+
+    Player();
+    virtual void LoadTextures();
+    void UpdateDirection();
+    virtual void Move(float deltaTime);
+    int GetDirectionRow();
+    virtual void Draw(Vector2 cameraPosition);
+    void Unload();
+    virtual ~Player();
 };
 
 #endif // PLAYER_H

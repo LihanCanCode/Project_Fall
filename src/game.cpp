@@ -134,7 +134,9 @@ void ResolvePlayerKeyCollision(Rectangle& playerRect, Rectangle& keyRect, bool& 
     }
 }
 
-void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hospitalRect, bool& insideHospital) {
+
+
+void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hospitalRect, bool& insideHospital, bool& playerPositionUpdated) {
     // Calculate the overlap between player and hospital
     float overlapX = (playerRect.x + playerRect.width / 2) - (hospitalRect.x + hospitalRect.width / 2);
     float overlapY = (playerRect.y + playerRect.height / 2) - (hospitalRect.y + hospitalRect.height / 2);
@@ -148,9 +150,74 @@ void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hosp
         // Print collision message
         std::cout << "Collision with hospital detected!" << std::endl;
         insideHospital = true; // Mark the player as inside the hospital
+
+        // Update player position only once when entering the hospital
+        if (!playerPositionUpdated) {
+            playerRect.x = 1259;
+            playerRect.y = 56;
+            playerPositionUpdated = true;
+        }
     }
 }
 
+vector<Rectangle> hospitalCollisions = {
+    {711, 585, 260, 280},
+    {1272, 227, 240, 60},
+    {1042, 231, 232, 60},
+    {752, 229, 208, 60},
+    {939, 364, 25, 110},
+    {1050, 425, 450, 25},
+    {1060, 450, 245, 405},
+    {690,423,225,50},
+    {713,865,230,70},
+    {1295,855,20,140},
+    {725,56,480,65},
+    {1323,56,100,40},
+    {1392,98,30,100},
+    {1274,287,210,70}
+};
+
+void InsideHospital(Rectangle& playerRect, const vector<Rectangle>& hospitalCollisions) {
+    for (const auto& rect : hospitalCollisions) {
+        // Calculate the overlap between player and hospital collision rectangle
+        float overlapX = (playerRect.x + playerRect.width / 2) - (rect.x + rect.width / 2);
+        float overlapY = (playerRect.y + playerRect.height / 2) - (rect.y + rect.height / 2);
+
+        // Half-widths and half-heights of the player and hospital collision rectangle
+        float halfWidthSum = (playerRect.width + rect.width) / 2;
+        float halfHeightSum = (playerRect.height + rect.height) / 2;
+
+        // Check for overlap (collision detection)
+        if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+            // Calculate penetration distances
+            float penetrationX = halfWidthSum - fabs(overlapX);
+            float penetrationY = halfHeightSum - fabs(overlapY);
+
+            // Resolve collision by moving player back based on smaller penetration distance
+            if (penetrationX < penetrationY) {
+                // Resolve X-axis collision
+                if (overlapX > 0) {
+                    playerRect.x += penetrationX;  // Move player to the right
+                } else {
+                    playerRect.x -= penetrationX;  // Move player to the left
+                }
+            } else {
+                // Resolve Y-axis collision
+                if (overlapY > 0) {
+                    playerRect.y += penetrationY;  // Move player down
+                } else {
+                    playerRect.y -= penetrationY;  // Move player up
+                }
+            }
+        }
+    }
+    if(playerRect.x>=1485) playerRect.x=1485;
+    if(playerRect.x<=713) playerRect.x=713;
+    if(playerRect.y>=990) playerRect.y=990;
+
+}
+
+//hospital inside collision
 
 
 Game::Game() {
@@ -196,7 +263,7 @@ void Game::Initialize() {
     conversationTexture3 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation3.png");
     conversationTexture4 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation4.png");
     keyTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/key.png"); // Load the key texture
-    hospitalTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/hospital1.png");
+    hospitalTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/hospital.png");
 
 }
 
@@ -219,6 +286,8 @@ void Game::Run() {
         std::cout << "Game failed to initialize properly. Exiting." << std::endl;
         return;
     }
+
+    bool playerPositionUpdated = false; // Flag to ensure the player's position is updated only once
 
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_F1)) {
@@ -243,14 +312,41 @@ void Game::Run() {
         // Adjust the collision rectangle to better fit the player's sprite
         Rectangle playerCollisionRect = {player.position.x, player.position.y, 25, 25};
         
-        // Perform collision detection and resolution
-        ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
-        ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation, conversationStep, firstCollisionOccurred);
-        if (keyVisible && !keyFound) {
-            ResolvePlayerKeyCollision(playerCollisionRect, keyRect, keyFound);
+        if (!insideHospital) {
+            // Perform collision detection and resolution
+            ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
+            ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation, conversationStep, firstCollisionOccurred);
+            if (keyVisible && !keyFound) {
+                ResolvePlayerKeyCollision(playerCollisionRect, keyRect, keyFound);
+            }
         }
-        ResolvePlayerHospitalCollision(playerCollisionRect, hospitalRect, insideHospital); // Check for hospital collision
         
+        ResolvePlayerHospitalCollision(playerCollisionRect, hospitalRect, insideHospital, playerPositionUpdated); // Check for hospital collision
+        
+        if (insideHospital) {
+            DrawRectangleLines(711, 585, 260, 280, BLUE);
+            DrawRectangleLines(1272, 227, 240, 135, BLUE);
+            DrawRectangleLines(1042, 231, 232, 300, BLUE);
+            DrawRectangleLines(752, 229, 208, 60, BLUE);
+            DrawRectangleLines(939, 364, 25, 110, BLUE);
+            DrawRectangleLines(1050, 425, 450, 25, BLUE);
+            DrawRectangleLines(1060, 450, 245, 405, BLUE);
+            DrawRectangleLines(690,423,225,50,BLUE);
+            
+            InsideHospital(playerCollisionRect, hospitalCollisions);
+
+            //check
+            if(IsKeyPressed(KEY_C)){
+                insideHospital=false;
+                player.position.x=1517;
+                player.position.y=382;
+                playerCollisionRect.x = 1517; // Update the collision rectangle position
+                playerCollisionRect.y = 382;   // Update the collision rectangle position
+
+                playerPositionUpdated=false;
+            }
+        }
+
         // Update player position based on the modified collision rectangle
         player.position.x = playerCollisionRect.x;
         player.position.y = playerCollisionRect.y;
@@ -263,7 +359,7 @@ void Game::Run() {
         BeginMode2D(camera);
 
         if (insideHospital) {
-            DrawTexture(hospitalTexture, 500, 0, WHITE); // Draw the hospital map
+            DrawTexture(hospitalTexture, 700, 0, WHITE); // Draw the hospital map
         } else {
             map.Draw(cameraPosition); // Draw the main map
         }

@@ -3,25 +3,28 @@
 #include <vector>
 using namespace std;
 
-vector<Rectangle> buildings = {Rectangle{402, 2010, 90, 95},//idle 
-                                Rectangle{422,640,280,550}, //nicher math
-                                Rectangle{240,2075,1405,200},   //lake er bam
-                                Rectangle{1185,855,235,250},    //mosque
-                                Rectangle{700,640,480,100},//lake er upor
+vector<Rectangle> buildings = { Rectangle{422,640,250,550}, //
+                                Rectangle{240,2075,1330,200},   //lake er bam
+                                Rectangle{1185,855,235,250},     //mosque
+                                Rectangle{660,640,515,100},//lake er upor
                                 Rectangle{1274,640,370,100},//lake er dan
                                 Rectangle{1464,735,180,400},//lake er dan niche
-                                Rectangle{810, 1190,520,225},
+                                Rectangle{760, 1190,570,225},
                                 Rectangle{1473,1190,180,225},
                                 Rectangle{1695, 1530, 520, 460},//right e hall
-                                Rectangle{1309, 1496, 320, 180},//cds
-                                Rectangle{1733, 1115, 500, 240},//right mid hall
+                                Rectangle{1260, 1496, 340, 190},//cds
+                                Rectangle{1733, 1115, 530, 240},//right mid hall
                                 Rectangle{1918, 1080, 280, 40},//right mid hall upor
                                 Rectangle{1722, 634, 500, 300},//right mid hall dan
                                 Rectangle{1399, 56, 270, 270}, //medical
-                                Rectangle{100, 70, 550, 280}, //medical
-                                Rectangle{420,1190, 270, 215}
-                                 };
+                                Rectangle{100, 70, 550, 280}, //female
+                                Rectangle{420,1190, 250, 215},
+                                Rectangle{672, 740, 450, 260},//auditorium
+                                };
 Rectangle idleRect = {1142, 1045, 70, 95}; // Define the idle character's collision rectangle
+Rectangle keyRect = {1300, 80, 32, 32}; // Define the key's collision rectangle
+bool keyFound = false; // Initialize the key found flag
+bool keyVisible = false; // Initialize the key visibility flag
 
 void ResolvePlayerBuildingCollision(Rectangle& destrect, const vector<Rectangle>& buildings) {
     // Loop through all buildings to check for collision
@@ -110,6 +113,23 @@ void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect
     }
 }
 
+void ResolvePlayerKeyCollision(Rectangle& playerRect, Rectangle& keyRect, bool& keyFound) {
+    // Calculate the overlap between player and key
+    float overlapX = (playerRect.x + playerRect.width / 2) - (keyRect.x + keyRect.width / 2);
+    float overlapY = (playerRect.y + playerRect.height / 2) - (keyRect.y + keyRect.height / 2);
+
+    // Half-widths and half-heights of the player and key
+    float halfWidthSum = (playerRect.width + keyRect.width) / 2;
+    float halfHeightSum = (playerRect.height + keyRect.height) / 2;
+
+    // Check for overlap (collision detection)
+    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+        // Print collision message
+        std::cout << "Collision with key detected!" << std::endl;
+        keyFound = true; // Mark the key as found
+    }
+}
+
 Game::Game() {
     initialized = false;
     showDebugInfo = true;
@@ -119,6 +139,8 @@ Game::Game() {
     conversationPosition = {0, 0};  // Initialize the conversation position
     conversationStep = 0;  // Initialize the conversation step
     firstCollisionOccurred = false;  // Initialize the first collision flag
+    keyFound = false;  // Initialize the key found flag
+    keyVisible = false; // Initialize the key visibility flag
 }
 
 void Game::Initialize() {
@@ -134,7 +156,7 @@ void Game::Initialize() {
 
     player.LoadTextures();
     idle.LoadTextures();
-    map.Load("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/map.png");
+    map.Load("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/map2.png");
 
     camera.target = player.position;
     camera.offset = {(float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2};
@@ -149,7 +171,7 @@ void Game::Initialize() {
     conversationTexture2 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation2.png");
     conversationTexture3 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation3.png");
     conversationTexture4 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation4.png");
-
+    keyTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/key.png"); // Load the key texture
 }
 
 void Game::UpdateCamera() {
@@ -195,6 +217,9 @@ void Game::Run() {
         // Perform collision detection and resolution
         ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
         ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation, conversationStep, firstCollisionOccurred);
+        if (keyVisible && !keyFound) {
+            ResolvePlayerKeyCollision(playerCollisionRect, keyRect, keyFound);
+        }
         
         // Update player position based on the modified collision rectangle
         player.position.x = playerCollisionRect.x;
@@ -215,23 +240,24 @@ void Game::Run() {
         
         //drawing rectangle for collision check
         DrawRectangleLines(idleRect.x, idleRect.y, idleRect.width, idleRect.height, RED);
-        DrawRectangleLines(422,640,270,550, RED);
-        DrawRectangleLines(240,2051,1405,200, RED);
+        DrawRectangleLines(422,640,240,550, RED);
+        DrawRectangleLines(240,2051,1330,200, RED);
         DrawRectangleLines(1185,855,220,250, RED);
-        DrawRectangleLines(700,640,464,100, RED);
+        DrawRectangleLines(660,640,500,100, RED);
 
         DrawRectangleLines(1274,640,370,200,RED);
         DrawRectangleLines(1464,735,180,350,RED);
-        DrawRectangleLines(810, 1190,500,225,RED);
+        DrawRectangleLines(760, 1190,550,225,RED);
         DrawRectangleLines(1473,1200,200,225,RED);
         DrawRectangleLines(1695, 1530, 500, 460,RED);
-        DrawRectangleLines(1309, 1496, 320, 180,RED);
-        DrawRectangleLines(1733, 1115, 500, 240,RED);
+        DrawRectangleLines(1260, 1496, 340, 190,RED);
+        DrawRectangleLines(1733, 1115, 530, 240,RED);
         DrawRectangleLines(1918, 1080, 280, 40,RED);
         DrawRectangleLines(1722, 634, 500, 300,RED);
         DrawRectangleLines(1399, 56, 270, 270,RED);
         DrawRectangleLines(100, 70, 550, 280,RED);
-        DrawRectangleLines(420,1190, 270, 215,RED);
+        DrawRectangleLines(420,1190, 240, 215,RED);
+        DrawRectangleLines(672, 740, 450, 260,RED);
 
         // If conversation is active, draw the appropriate image
         if (showConversation) {
@@ -240,8 +266,22 @@ void Game::Run() {
             } else if (conversationStep == 1) {
                 DrawTexture(conversationTexture2, conversationPosition.x+60, conversationPosition.y-50, WHITE);
             } else if (conversationStep == 2) {
-                DrawTexture(conversationTexture3, conversationPosition.x+60, conversationPosition.y-50, WHITE);
+                if (keyFound) {
+                    DrawTexture(conversationTexture4, conversationPosition.x+60, conversationPosition.y-50, WHITE);
+                    
+
+                } else {
+                    DrawTexture(conversationTexture3, conversationPosition.x+60, conversationPosition.y-50, WHITE);
+                }
+            } else if (conversationStep == 3) {
+                DrawTexture(conversationTexture4, conversationPosition.x+60, conversationPosition.y-50, WHITE);
             }
+        }
+
+        // Draw the key if it is visible and has not been found
+        if (keyVisible && !keyFound) {
+            DrawTexture(keyTexture, keyRect.x, keyRect.y, WHITE);
+            DrawRectangleLines(keyRect.x, keyRect.y, 32, 32, RED); // Draw the key's collision rectangle
         }
 
         DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
@@ -263,9 +303,13 @@ void Game::Run() {
             } else if (conversationStep == 1) {
                 showConversation = false;
                 conversationStep = 2;
+                keyVisible = true; // Make the key visible
             } else if (conversationStep == 2) {
                 showConversation = false;
                 conversationStep = 3;
+            } else if (conversationStep == 3) {
+                showConversation = false;
+                conversationStep = 4;
             }
         }
 
@@ -278,5 +322,7 @@ void Game::Run() {
     UnloadTexture(conversationTexture1); // Unload the first conversation texture
     UnloadTexture(conversationTexture2); // Unload the second conversation texture
     UnloadTexture(conversationTexture3); // Unload the third conversation texture
+    UnloadTexture(conversationTexture4); // Unload the fourth conversation texture
+    UnloadTexture(keyTexture); // Unload the key texture
     CloseWindow();
 }

@@ -20,9 +20,13 @@ vector<Rectangle> buildings = { Rectangle{422,640,250,550}, //
                                 Rectangle{100, 70, 550, 280}, //female
                                 Rectangle{420,1190, 250, 215},
                                 Rectangle{672, 740, 450, 260},//auditorium
+                                Rectangle{1338, 1825, 200, 170},//right mid hall
                                 };
 Rectangle idleRect = {1142, 1045, 70, 95}; // Define the idle character's collision rectangle
 Rectangle keyRect = {1300, 80, 32, 32}; // Define the key's collision rectangle
+Rectangle mazeRect={1335, 1820, 210, 180};
+Rectangle hospitalRect = {1395, 50, 280, 280}; // Define the hospital's collision rectangle
+
 bool keyFound = false; // Initialize the key found flag
 bool keyVisible = false; // Initialize the key visibility flag
 
@@ -130,9 +134,29 @@ void ResolvePlayerKeyCollision(Rectangle& playerRect, Rectangle& keyRect, bool& 
     }
 }
 
+void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hospitalRect, bool& insideHospital) {
+    // Calculate the overlap between player and hospital
+    float overlapX = (playerRect.x + playerRect.width / 2) - (hospitalRect.x + hospitalRect.width / 2);
+    float overlapY = (playerRect.y + playerRect.height / 2) - (hospitalRect.y + hospitalRect.height / 2);
+
+    // Half-widths and half-heights of the player and hospital
+    float halfWidthSum = (playerRect.width + hospitalRect.width) / 2;
+    float halfHeightSum = (playerRect.height + hospitalRect.height) / 2;
+
+    // Check for overlap (collision detection)
+    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+        // Print collision message
+        std::cout << "Collision with hospital detected!" << std::endl;
+        insideHospital = true; // Mark the player as inside the hospital
+    }
+}
+
+
+
 Game::Game() {
     initialized = false;
     showDebugInfo = true;
+    insideHospital = false;
     cameraPosition = {0, 0};
     camera = {0};
     showConversation = false;  // Initialize the conversation flag
@@ -172,6 +196,8 @@ void Game::Initialize() {
     conversationTexture3 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation3.png");
     conversationTexture4 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation4.png");
     keyTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/key.png"); // Load the key texture
+    hospitalTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/hospital1.png");
+
 }
 
 void Game::UpdateCamera() {
@@ -182,6 +208,9 @@ void Game::UpdateCamera() {
     if (camera.target.x > map.background.width - GetScreenWidth() / 2) camera.target.x = map.background.width - GetScreenWidth() / 2;
     if (camera.target.y > map.background.height - GetScreenHeight() / 2) camera.target.y = map.background.height - GetScreenHeight() / 2;
 }
+
+
+
 
 void Game::Run() {
     Initialize();
@@ -220,6 +249,7 @@ void Game::Run() {
         if (keyVisible && !keyFound) {
             ResolvePlayerKeyCollision(playerCollisionRect, keyRect, keyFound);
         }
+        ResolvePlayerHospitalCollision(playerCollisionRect, hospitalRect, insideHospital); // Check for hospital collision
         
         // Update player position based on the modified collision rectangle
         player.position.x = playerCollisionRect.x;
@@ -232,7 +262,11 @@ void Game::Run() {
 
         BeginMode2D(camera);
 
-        map.Draw(cameraPosition);
+        if (insideHospital) {
+            DrawTexture(hospitalTexture, 500, 0, WHITE); // Draw the hospital map
+        } else {
+            map.Draw(cameraPosition); // Draw the main map
+        }
         player.Draw(cameraPosition);
         Image gg = LoadImage("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/idle.png");
         Texture2D texture = LoadTextureFromImage(gg);
@@ -258,6 +292,9 @@ void Game::Run() {
         DrawRectangleLines(100, 70, 550, 280,RED);
         DrawRectangleLines(420,1190, 240, 215,RED);
         DrawRectangleLines(672, 740, 450, 260,RED);
+        DrawRectangleLines(1338, 1825, 200, 170,RED);
+        DrawRectangleLines(1335, 1820, 210, 180,GREEN);
+        DrawRectangleLines(1395, 50, 280, 280,GREEN);
 
         // If conversation is active, draw the appropriate image
         if (showConversation) {
@@ -268,8 +305,6 @@ void Game::Run() {
             } else if (conversationStep == 2) {
                 if (keyFound) {
                     DrawTexture(conversationTexture4, conversationPosition.x+60, conversationPosition.y-50, WHITE);
-                    
-
                 } else {
                     DrawTexture(conversationTexture3, conversationPosition.x+60, conversationPosition.y-50, WHITE);
                 }
@@ -293,8 +328,9 @@ void Game::Run() {
             DrawText(TextFormat("Player position: (%.2f, %.2f)", player.position.x, player.position.y), GetScreenWidth() - 300, 10, 20, BLACK);
         }
 
-        // Print the current state of showConversation at the top-right corner
+        // Print the current state of showConversation and insideHospital at the top-right corner
         DrawText(TextFormat("Conversation: %s", showConversation ? "ON" : "OFF"), GetScreenWidth() - 200, 50, 20, BLACK);
+        DrawText(TextFormat("Inside Hospital: %s", insideHospital ? "YES" : "NO"), GetScreenWidth() - 200, 80, 20, BLACK);
 
         // If Enter is pressed, switch to the next conversation step or hide the conversation
         if (showConversation && IsKeyPressed(KEY_ENTER)) {
@@ -324,5 +360,6 @@ void Game::Run() {
     UnloadTexture(conversationTexture3); // Unload the third conversation texture
     UnloadTexture(conversationTexture4); // Unload the fourth conversation texture
     UnloadTexture(keyTexture); // Unload the key texture
+    UnloadTexture(hospitalTexture); // Unload the hospital texture
     CloseWindow();
 }

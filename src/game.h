@@ -15,14 +15,30 @@ public:
     Vector2 cameraPosition;
     Camera2D camera;
     bool showConversation;
-    Texture2D conversationTexture;
+    Texture2D conversationTexture1;
+    Texture2D conversationTexture2;
+    Texture2D conversationTexture3;
+    Texture2D conversationTexture4;
+    Texture2D keyTexture;
+    Texture2D hospitalTexture;
+    Texture2D libraryTexture;
+    Texture2D cdsTexture;
+    bool keyFound;
     Vector2 conversationPosition;
-    
+    bool firstCollisionOccurred;
+    bool mazeActive;
+    bool insideHospital;
+    bool insideCDS;
+    bool insideLibrary;
+
+
+    int conversationStep = 0;
 
     Game();
     void Initialize();
     void UpdateCamera();
     void Run();
+    
 };
 
 #endif // GAME_H

@@ -2,6 +2,10 @@
 #include <iostream>
 #include <vector>
 using namespace std;
+enum GameState {
+    MAP,
+    HOSPITAL
+};
 
 vector<Rectangle> buildings = { Rectangle{422,640,250,550}, //
                                 Rectangle{240,2075,1330,200},   //lake er bam
@@ -26,6 +30,10 @@ Rectangle idleRect = {1142, 1045, 70, 95}; // Define the idle character's collis
 Rectangle keyRect = {1300, 80, 32, 32}; // Define the key's collision rectangle
 Rectangle mazeRect={1335, 1820, 210, 180};
 Rectangle hospitalRect = {1395, 50, 280, 280}; // Define the hospital's collision rectangle
+Rectangle cdsRect ={1390,1670,80,30};
+Rectangle libraryRect={1940,914,150,30};
+
+
 
 bool keyFound = false; // Initialize the key found flag
 bool keyVisible = false; // Initialize the key visibility flag
@@ -63,6 +71,30 @@ void ResolvePlayerBuildingCollision(Rectangle& destrect, const vector<Rectangle>
                     destrect.y -= penetrationY;  // Move player up
                 }
             }
+        }
+    }
+}
+
+void ResolvePlayerLibraryCollision(Rectangle& playerRect, const Rectangle& libraryRect, bool& insideLibrary, bool& playerPositionUpdated) {
+    // Calculate the overlap between player and library
+    float overlapX = (playerRect.x + playerRect.width / 2) - (libraryRect.x + libraryRect.width / 2);
+    float overlapY = (playerRect.y + playerRect.height / 2) - (libraryRect.y + libraryRect.height / 2);
+
+    // Half-widths and half-heights of the player and library
+    float halfWidthSum = (playerRect.width + libraryRect.width) / 2;
+    float halfHeightSum = (playerRect.height + libraryRect.height) / 2;
+
+    // Check for overlap (collision detection)
+    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+        // Print collision message
+        std::cout << "Collision with library detected!" << std::endl;
+        insideLibrary = true; // Mark the player as inside the library
+
+        // Update player position only once when entering the library
+        if (!playerPositionUpdated) {
+            playerRect.x = 1940;
+            playerRect.y = 934;
+            playerPositionUpdated = true;
         }
     }
 }
@@ -160,6 +192,32 @@ void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hosp
     }
 }
 
+
+void ResolvePlayerCDSCollision(Rectangle& playerRect, const Rectangle& cdsRect, bool& insideCDS, bool& playerPositionUpdated) {
+    // Calculate the overlap between player and CDS
+    float overlapX = (playerRect.x + playerRect.width / 2) - (cdsRect.x + cdsRect.width / 2);
+    float overlapY = (playerRect.y + playerRect.height / 2) - (cdsRect.y + cdsRect.height / 2);
+
+    // Half-widths and half-heights of the player and CDS
+    float halfWidthSum = (playerRect.width + cdsRect.width) / 2;
+    float halfHeightSum = (playerRect.height + cdsRect.height) / 2;
+
+    // Check for overlap (collision detection)
+    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+        // Print collision message
+        std::cout << "Collision with CDS detected!" << std::endl;
+        insideCDS = true; // Mark the player as inside the CDS
+
+        // Update player position only once when entering the CDS
+        if (!playerPositionUpdated) {
+            playerRect.x = 1390;
+            playerRect.y = 1685;
+            playerPositionUpdated = true;
+        }
+    }
+}
+
+
 vector<Rectangle> hospitalCollisions = {
     {711, 585, 260, 280},
     {1272, 227, 240, 60},
@@ -224,6 +282,8 @@ Game::Game() {
     initialized = false;
     showDebugInfo = true;
     insideHospital = false;
+    insideCDS = false; 
+    insideLibrary = false;
     cameraPosition = {0, 0};
     camera = {0};
     showConversation = false;  // Initialize the conversation flag
@@ -264,6 +324,8 @@ void Game::Initialize() {
     conversationTexture4 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation4.png");
     keyTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/key.png"); // Load the key texture
     hospitalTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/hospital.png");
+    libraryTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/library.png");
+    cdsTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/cds.png");
 
 }
 
@@ -312,7 +374,7 @@ void Game::Run() {
         // Adjust the collision rectangle to better fit the player's sprite
         Rectangle playerCollisionRect = {player.position.x, player.position.y, 25, 25};
         
-        if (!insideHospital) {
+        if (!insideHospital && !insideCDS && !insideLibrary) {
             // Perform collision detection and resolution
             ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
             ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation, conversationStep, firstCollisionOccurred);
@@ -320,9 +382,14 @@ void Game::Run() {
                 ResolvePlayerKeyCollision(playerCollisionRect, keyRect, keyFound);
             }
         }
-        
-        ResolvePlayerHospitalCollision(playerCollisionRect, hospitalRect, insideHospital, playerPositionUpdated); // Check for hospital collision
-        
+
+
+        if(!insideHospital && !insideCDS && !insideLibrary){
+            ResolvePlayerHospitalCollision(playerCollisionRect, hospitalRect, insideHospital, playerPositionUpdated); // Check for hospital collision
+            ResolvePlayerCDSCollision(playerCollisionRect, cdsRect, insideCDS, playerPositionUpdated); // Check for CDS collision
+            ResolvePlayerLibraryCollision(playerCollisionRect, libraryRect, insideLibrary, playerPositionUpdated); // Check for library collision
+        }
+
         if (insideHospital) {
             DrawRectangleLines(711, 585, 260, 280, BLUE);
             DrawRectangleLines(1272, 227, 240, 135, BLUE);
@@ -347,6 +414,33 @@ void Game::Run() {
             }
         }
 
+
+        if(insideCDS){
+            DrawRectangleLines(1390,1670,80,30,BLUE);
+            if(IsKeyPressed(KEY_C)){
+                insideCDS=false;
+                player.position.x=1390;
+                player.position.y=1710;
+                playerCollisionRect.x = 1390; // Update the collision rectangle position
+                playerCollisionRect.y = 1710;   // Update the collision rectangle position
+
+                playerPositionUpdated=false;
+            }
+        }
+
+
+        if(insideLibrary){
+            if(IsKeyPressed(KEY_C)){
+                insideLibrary=false;
+                player.position.x=1940;
+                player.position.y=950;
+                playerCollisionRect.x = 1940; // Update the collision rectangle position
+                playerCollisionRect.y = 950;   // Update the collision rectangle position
+
+                playerPositionUpdated=false;
+            }
+        }
+
         // Update player position based on the modified collision rectangle
         player.position.x = playerCollisionRect.x;
         player.position.y = playerCollisionRect.y;
@@ -360,10 +454,18 @@ void Game::Run() {
 
         if (insideHospital) {
             DrawTexture(hospitalTexture, 700, 0, WHITE); // Draw the hospital map
-        } else {
+        }
+        else if(insideCDS){
+            DrawTexture(cdsTexture, 0, 0 , WHITE); // Draw the CDS map
+        }
+        else if(insideLibrary){
+            DrawTexture(libraryTexture, 700, 0 , WHITE); // Draw the library map
+        }
+        else {
             map.Draw(cameraPosition); // Draw the main map
         }
         player.Draw(cameraPosition);
+        
         Image gg = LoadImage("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/idle.png");
         Texture2D texture = LoadTextureFromImage(gg);
         Rectangle source = {0.0f, 0.0f, (float)texture.width-10, (float)texture.height};
@@ -391,6 +493,8 @@ void Game::Run() {
         DrawRectangleLines(1338, 1825, 200, 170,RED);
         DrawRectangleLines(1335, 1820, 210, 180,GREEN);
         DrawRectangleLines(1395, 50, 280, 280,GREEN);
+        DrawRectangleLines(1390,1670,80,30,GREEN);
+        DrawRectangleLines(1940,914,150,30,GREEN);
 
         // If conversation is active, draw the appropriate image
         if (showConversation) {
@@ -415,7 +519,9 @@ void Game::Run() {
             DrawRectangleLines(keyRect.x, keyRect.y, 32, 32, RED); // Draw the key's collision rectangle
         }
 
-        DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
+        if(!insideHospital && !insideCDS && !insideLibrary){
+            DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
+        }
         EndMode2D();
 
         if (showDebugInfo) {
@@ -427,6 +533,8 @@ void Game::Run() {
         // Print the current state of showConversation and insideHospital at the top-right corner
         DrawText(TextFormat("Conversation: %s", showConversation ? "ON" : "OFF"), GetScreenWidth() - 200, 50, 20, BLACK);
         DrawText(TextFormat("Inside Hospital: %s", insideHospital ? "YES" : "NO"), GetScreenWidth() - 200, 80, 20, BLACK);
+        DrawText(TextFormat("Inside CDS: %s", insideCDS ? "YES" : "NO"), GetScreenWidth() - 200, 110, 20, BLACK);
+        DrawText(TextFormat("Inside Library: %s", insideLibrary ? "YES" : "NO"), GetScreenWidth() - 200, 140, 20, BLACK);
 
         // If Enter is pressed, switch to the next conversation step or hide the conversation
         if (showConversation && IsKeyPressed(KEY_ENTER)) {
@@ -457,5 +565,7 @@ void Game::Run() {
     UnloadTexture(conversationTexture4); // Unload the fourth conversation texture
     UnloadTexture(keyTexture); // Unload the key texture
     UnloadTexture(hospitalTexture); // Unload the hospital texture
+    UnloadTexture(libraryTexture); // Unload the library texture
+    UnloadTexture(cdsTexture); // Unload the CDS texture
     CloseWindow();
 }

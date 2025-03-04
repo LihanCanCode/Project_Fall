@@ -1,4 +1,5 @@
 #include "game.h"
+#include "collision.h"
 #include <iostream>
 #include <vector>
 using namespace std;
@@ -32,192 +33,9 @@ Rectangle mazeRect={1335, 1820, 210, 180};
 Rectangle hospitalRect = {1395, 50, 280, 280}; // Define the hospital's collision rectangle
 Rectangle cdsRect ={1390,1670,80,30};
 Rectangle libraryRect={1940,914,150,30};
+Rectangle bookRect = {1585,364,32,32}; // Define the book's collision rectangle
 
-
-
-bool keyFound = false; // Initialize the key found flag
-bool keyVisible = false; // Initialize the key visibility flag
-
-void ResolvePlayerBuildingCollision(Rectangle& destrect, const vector<Rectangle>& buildings) {
-    // Loop through all buildings to check for collision
-    for (const auto& building : buildings) {
-        // Calculate the overlap between player and building
-        float overlapX = (destrect.x + destrect.width / 2) - (building.x + building.width / 2);
-        float overlapY = (destrect.y + destrect.height / 2) - (building.y + building.height / 2);
-
-        // Half-widths and half-heights of the player and building
-        float halfWidthSum = (destrect.width + building.width) / 2;
-        float halfHeightSum = (destrect.height + building.height) / 2;
-
-        // Check for overlap (collision detection)
-        if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
-            // Calculate penetration distances
-            float penetrationX = halfWidthSum - fabs(overlapX);
-            float penetrationY = halfHeightSum - fabs(overlapY);
-
-            // Resolve collision by moving player back based on smaller penetration distance
-            if (penetrationX < penetrationY) {
-                // Resolve X-axis collision
-                if (overlapX > 0) {
-                    destrect.x += penetrationX;  // Move player to the right
-                } else {
-                    destrect.x -= penetrationX;  // Move player to the left
-                }
-            } else {
-                // Resolve Y-axis collision
-                if (overlapY > 0) {
-                    destrect.y += penetrationY;  // Move player down
-                } else {
-                    destrect.y -= penetrationY;  // Move player up
-                }
-            }
-        }
-    }
-}
-
-void ResolvePlayerLibraryCollision(Rectangle& playerRect, const Rectangle& libraryRect, bool& insideLibrary, bool& playerPositionUpdated) {
-    // Calculate the overlap between player and library
-    float overlapX = (playerRect.x + playerRect.width / 2) - (libraryRect.x + libraryRect.width / 2);
-    float overlapY = (playerRect.y + playerRect.height / 2) - (libraryRect.y + libraryRect.height / 2);
-
-    // Half-widths and half-heights of the player and library
-    float halfWidthSum = (playerRect.width + libraryRect.width) / 2;
-    float halfHeightSum = (playerRect.height + libraryRect.height) / 2;
-
-    // Check for overlap (collision detection)
-    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
-        // Print collision message
-        std::cout << "Collision with library detected!" << std::endl;
-        insideLibrary = true; // Mark the player as inside the library
-
-        // Update player position only once when entering the library
-        if (!playerPositionUpdated) {
-            playerRect.x = 1940;
-            playerRect.y = 934;
-            playerPositionUpdated = true;
-        }
-    }
-}
-
-void ResolvePlayerIdleCollision(Rectangle& playerRect, const Rectangle& idleRect, Vector2& conversationPosition, bool& showConversation, int& conversationStep, bool& firstCollisionOccurred) {
-    // Calculate the overlap between player and idle character
-    float overlapX = (playerRect.x + playerRect.width / 2) - (idleRect.x + idleRect.width / 2);
-    float overlapY = (playerRect.y + playerRect.height / 2) - (idleRect.y + idleRect.height / 2);
-
-    // Half-widths and half-heights of the player and idle character
-    float halfWidthSum = (playerRect.width + idleRect.width) / 2;
-    float halfHeightSum = (playerRect.height + idleRect.height) / 2;
-
-    // Check for overlap (collision detection)
-    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
-        // Calculate penetration distances
-        float penetrationX = halfWidthSum - fabs(overlapX);
-        float penetrationY = halfHeightSum - fabs(overlapY);
-
-        // Print collision message
-        std::cout << "Collision with idle character detected!" << std::endl;
-
-        // Resolve collision by moving player back based on smaller penetration distance
-        if (penetrationX < penetrationY) {
-            // Resolve X-axis collision
-            if (overlapX > 0) {
-                playerRect.x += penetrationX;  // Move player to the right
-            } else {
-                playerRect.x -= penetrationX;  // Move player to the left
-            }
-        } else {
-            // Resolve Y-axis collision
-            if (overlapY > 0) {
-                playerRect.y += penetrationY;  // Move player down
-            } else {
-                playerRect.y -= penetrationY;  // Move player up
-            }
-        }
-
-        // Set conversation position and show the image
-        conversationPosition = {playerRect.x - 50, playerRect.y - 280}; // Slightly above the player
-        showConversation = true;
-
-        // If this is the first collision, set the conversation step to 0
-        if (!firstCollisionOccurred) {
-            conversationStep = 0;
-            firstCollisionOccurred = true;
-        } else {
-            // If this is a subsequent collision, set the conversation step to 2
-            conversationStep = 2;
-        }
-    }
-}
-
-void ResolvePlayerKeyCollision(Rectangle& playerRect, Rectangle& keyRect, bool& keyFound) {
-    // Calculate the overlap between player and key
-    float overlapX = (playerRect.x + playerRect.width / 2) - (keyRect.x + keyRect.width / 2);
-    float overlapY = (playerRect.y + playerRect.height / 2) - (keyRect.y + keyRect.height / 2);
-
-    // Half-widths and half-heights of the player and key
-    float halfWidthSum = (playerRect.width + keyRect.width) / 2;
-    float halfHeightSum = (playerRect.height + keyRect.height) / 2;
-
-    // Check for overlap (collision detection)
-    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
-        // Print collision message
-        std::cout << "Collision with key detected!" << std::endl;
-        keyFound = true; // Mark the key as found
-    }
-}
-
-
-
-void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hospitalRect, bool& insideHospital, bool& playerPositionUpdated) {
-    // Calculate the overlap between player and hospital
-    float overlapX = (playerRect.x + playerRect.width / 2) - (hospitalRect.x + hospitalRect.width / 2);
-    float overlapY = (playerRect.y + playerRect.height / 2) - (hospitalRect.y + hospitalRect.height / 2);
-
-    // Half-widths and half-heights of the player and hospital
-    float halfWidthSum = (playerRect.width + hospitalRect.width) / 2;
-    float halfHeightSum = (playerRect.height + hospitalRect.height) / 2;
-
-    // Check for overlap (collision detection)
-    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
-        // Print collision message
-        std::cout << "Collision with hospital detected!" << std::endl;
-        insideHospital = true; // Mark the player as inside the hospital
-
-        // Update player position only once when entering the hospital
-        if (!playerPositionUpdated) {
-            playerRect.x = 1259;
-            playerRect.y = 56;
-            playerPositionUpdated = true;
-        }
-    }
-}
-
-
-void ResolvePlayerCDSCollision(Rectangle& playerRect, const Rectangle& cdsRect, bool& insideCDS, bool& playerPositionUpdated) {
-    // Calculate the overlap between player and CDS
-    float overlapX = (playerRect.x + playerRect.width / 2) - (cdsRect.x + cdsRect.width / 2);
-    float overlapY = (playerRect.y + playerRect.height / 2) - (cdsRect.y + cdsRect.height / 2);
-
-    // Half-widths and half-heights of the player and CDS
-    float halfWidthSum = (playerRect.width + cdsRect.width) / 2;
-    float halfHeightSum = (playerRect.height + cdsRect.height) / 2;
-
-    // Check for overlap (collision detection)
-    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
-        // Print collision message
-        std::cout << "Collision with CDS detected!" << std::endl;
-        insideCDS = true; // Mark the player as inside the CDS
-
-        // Update player position only once when entering the CDS
-        if (!playerPositionUpdated) {
-            playerRect.x = 1390;
-            playerRect.y = 1685;
-            playerPositionUpdated = true;
-        }
-    }
-}
-
-
+//Inside Hospital Rectangles
 vector<Rectangle> hospitalCollisions = {
     {711, 585, 260, 280},
     {1272, 227, 240, 60},
@@ -235,47 +53,10 @@ vector<Rectangle> hospitalCollisions = {
     {1274,287,210,70}
 };
 
-void InsideHospital(Rectangle& playerRect, const vector<Rectangle>& hospitalCollisions) {
-    for (const auto& rect : hospitalCollisions) {
-        // Calculate the overlap between player and hospital collision rectangle
-        float overlapX = (playerRect.x + playerRect.width / 2) - (rect.x + rect.width / 2);
-        float overlapY = (playerRect.y + playerRect.height / 2) - (rect.y + rect.height / 2);
 
-        // Half-widths and half-heights of the player and hospital collision rectangle
-        float halfWidthSum = (playerRect.width + rect.width) / 2;
-        float halfHeightSum = (playerRect.height + rect.height) / 2;
 
-        // Check for overlap (collision detection)
-        if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
-            // Calculate penetration distances
-            float penetrationX = halfWidthSum - fabs(overlapX);
-            float penetrationY = halfHeightSum - fabs(overlapY);
 
-            // Resolve collision by moving player back based on smaller penetration distance
-            if (penetrationX < penetrationY) {
-                // Resolve X-axis collision
-                if (overlapX > 0) {
-                    playerRect.x += penetrationX;  // Move player to the right
-                } else {
-                    playerRect.x -= penetrationX;  // Move player to the left
-                }
-            } else {
-                // Resolve Y-axis collision
-                if (overlapY > 0) {
-                    playerRect.y += penetrationY;  // Move player down
-                } else {
-                    playerRect.y -= penetrationY;  // Move player up
-                }
-            }
-        }
-    }
-    if(playerRect.x>=1485) playerRect.x=1485;
-    if(playerRect.x<=713) playerRect.x=713;
-    if(playerRect.y>=990) playerRect.y=990;
 
-}
-
-//hospital inside collision
 
 
 Game::Game() {
@@ -292,6 +73,7 @@ Game::Game() {
     firstCollisionOccurred = false;  // Initialize the first collision flag
     keyFound = false;  // Initialize the key found flag
     keyVisible = false; // Initialize the key visibility flag
+    bookFound = false; // Initialize the book found flag
 }
 
 void Game::Initialize() {
@@ -326,6 +108,8 @@ void Game::Initialize() {
     hospitalTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/hospital.png");
     libraryTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/library.png");
     cdsTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/cds.png");
+    bookTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/book.png");
+
 
 }
 
@@ -430,6 +214,8 @@ void Game::Run() {
 
 
         if(insideLibrary){
+
+           
             if(IsKeyPressed(KEY_C)){
                 insideLibrary=false;
                 player.position.x=1940;
@@ -438,6 +224,12 @@ void Game::Run() {
                 playerCollisionRect.y = 950;   // Update the collision rectangle position
 
                 playerPositionUpdated=false;
+            }
+            
+            //check bookfound
+            
+            if(!bookFound){
+                ResolvePlayerBookCollision(playerCollisionRect, bookRect, bookFound);
             }
         }
 
@@ -460,6 +252,14 @@ void Game::Run() {
         }
         else if(insideLibrary){
             DrawTexture(libraryTexture, 700, 0 , WHITE); // Draw the library map
+            if(!bookFound){
+                DrawTexture(bookTexture, 1585,364, WHITE);
+                DrawRectangleLines(1585, 364, 32, 32, RED); // Draw the book's collision rectangle
+            }
+            /*if(!bookFound){
+                DrawTexture(bookTexture, bookRect.x, bookRect.y, WHITE);
+                DrawRectangleLines(bookRect.x, bookRect.y, 32, 32, RED); // Draw the book's collision rectangle
+            }*/
         }
         else {
             map.Draw(cameraPosition); // Draw the main map
@@ -567,5 +367,6 @@ void Game::Run() {
     UnloadTexture(hospitalTexture); // Unload the hospital texture
     UnloadTexture(libraryTexture); // Unload the library texture
     UnloadTexture(cdsTexture); // Unload the CDS texture
+    UnloadTexture(bookTexture); // Unload the book texture
     CloseWindow();
 }

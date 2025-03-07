@@ -80,6 +80,18 @@ void ResolvePlayerKeyCollision(Rectangle& playerRect, Rectangle& keyRect, bool& 
     }
 }
 
+void ResolvePlayerBookCollision(Rectangle& playerRect, Rectangle& keyRect, bool& bookFound) {
+    float overlapX = (playerRect.x + playerRect.width / 2) - (keyRect.x + keyRect.width / 2);
+    float overlapY = (playerRect.y + playerRect.height / 2) - (keyRect.y + keyRect.height / 2);
+    float halfWidthSum = (playerRect.width + keyRect.width) / 2;
+    float halfHeightSum = (playerRect.height + keyRect.height) / 2;
+
+    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+        std::cout << "Collision with book detected!" << std::endl;
+        bookFound = true;
+    }
+}
+
 void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hospitalRect, bool& insideHospital, bool& playerPositionUpdated) {
     float overlapX = (playerRect.x + playerRect.width / 2) - (hospitalRect.x + hospitalRect.width / 2);
     float overlapY = (playerRect.y + playerRect.height / 2) - (hospitalRect.y + hospitalRect.height / 2);
@@ -164,3 +176,4 @@ void InsideHospital(Rectangle& playerRect, const std::vector<Rectangle>& hospita
     if(playerRect.x<=713) playerRect.x=713;
     if(playerRect.y>=990) playerRect.y=990;
 }
+

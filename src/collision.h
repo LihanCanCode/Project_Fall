@@ -11,5 +11,6 @@ void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hosp
 void ResolvePlayerCDSCollision(Rectangle& playerRect, const Rectangle& cdsRect, bool& insideCDS, bool& playerPositionUpdated);
 void ResolvePlayerLibraryCollision(Rectangle& playerRect, const Rectangle& libraryRect, bool& insideLibrary, bool& playerPositionUpdated);
 void InsideHospital(Rectangle& playerRect, const std::vector<Rectangle>& hospitalCollisions);
+void ResolvePlayerBookCollision(Rectangle& playerRect, Rectangle& bookRect, bool& bookFound);
 
 #endif // COLLISION_H

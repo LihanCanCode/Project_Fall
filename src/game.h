@@ -23,7 +23,10 @@ public:
     Texture2D hospitalTexture;
     Texture2D libraryTexture;
     Texture2D cdsTexture;
+    Texture2D bookTexture;
     bool keyFound;
+    bool bookFound;
+    bool keyVisible;
     Vector2 conversationPosition;
     bool firstCollisionOccurred;
     bool mazeActive;

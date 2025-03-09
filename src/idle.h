@@ -5,6 +5,7 @@
 
 class Idle : public Player {
 public:
+    Texture2D Texture;
     Idle();
     void LoadTextures() override;
     void Move(float deltaTime) override;

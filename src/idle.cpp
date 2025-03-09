@@ -11,7 +11,7 @@ void Idle::LoadTextures() {
     textureLoaded = true;
 }
 
-void Idle::Move(float deltaTime) {
+void Idle::Move(float deltaTime, bool insideLibrary, bool insideClassroom, bool insideHospital, bool insideCDS) {
     // Override the Move method to prevent movement
 }
 

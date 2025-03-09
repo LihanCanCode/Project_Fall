@@ -24,9 +24,13 @@ public:
     Texture2D libraryTexture;
     Texture2D cdsTexture;
     Texture2D bookTexture;
+    Texture2D hallTexture;
     Texture2D mysteryTexture;
     Texture2D mysteryTexture2;
     Texture2D classroomTexture;
+    Texture2D usbTexture;
+    Texture2D cipherTexture;
+    Texture2D cipherTexture2;
 
     Rectangle source1;
     bool keyFound;
@@ -42,6 +46,10 @@ public:
     bool insideLibrary;
     bool showMystery;
     bool showMystery2;
+    bool usbFound;
+    bool showcipher;
+    bool showcipher2;
+    bool insideHall;
 
 
     int conversationStep = 0;

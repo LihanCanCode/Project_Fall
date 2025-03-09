@@ -8,7 +8,7 @@ public:
     Texture2D Texture;
     Idle();
     void LoadTextures() override;
-    void Move(float deltaTime) override;
+    void Move(float deltaTime, bool insideLibrary, bool insideClassroom, bool insideHospital, bool insideCDS) override;
     void Draw(Vector2 cameraPosition) override;
 };
 

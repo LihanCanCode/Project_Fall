@@ -36,6 +36,8 @@ Rectangle cdsRect ={1390,1670,80,30};
 Rectangle libraryRect={1940,914,150,30};
 Rectangle bookRect = {1585,364,32,32}; // Define the book's collision rectangle
 Rectangle classroomRect ={1965,1355,100,40};
+Rectangle usbRect = {1728, 1395, 32, 32}; // Define the USB's collision rectangle
+Rectangle hallRect={1840,1990,100,20};
 
 //Inside Hospital Rectangles
 vector<Rectangle> hospitalCollisions = {
@@ -56,7 +58,7 @@ vector<Rectangle> hospitalCollisions = {
 };
 
 vector<Rectangle> libraryCOllisions ={
-    {1450,56,750,84},
+    /*{1450,56,750,84},
     {740,56,625,84},
     {740,145,115,495},
     {1950,145,250,45},
@@ -64,11 +66,20 @@ vector<Rectangle> libraryCOllisions ={
     {727,1100,123,550},
     {727,1750,122,253},
     {850,1912,161,1003},
-    {1970,895,230,580}
+    {1970,895,230,580}*/
 };
 
 vector<Rectangle> classroomCollisions ={
-    {}
+    {50,838,1460,225}, // upper wall
+    {1170,1063,340,155},// upper wall triangle
+    {514,1038,25,410},// middle wall
+    {1462,1230,40,225},//middle wall
+    {50,1454,90,134},
+    {206,1454,660,134},
+    {940,1454,1034,134},
+    {2035,1454,125,134},
+    {1510,837,642,60},
+    {2143,894,10,545}
 };
 
 
@@ -94,6 +105,10 @@ Game::Game() {
     showMystery= false;
     showMystery2= false;
     insideClassroom=false;
+    usbFound=false;
+    showcipher=false;
+    showcipher2=false;
+    insideHall=false;
 
 }
 
@@ -136,21 +151,75 @@ void Game::Initialize() {
     mysteryTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/mystery.png");
     mysteryTexture2 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/mystery2.png");
     classroomTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/classroom.png");
+    cipherTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/cipher.png");
+    cipherTexture2 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/cipher2.png");
+    usbTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/usb.png");
+    hallTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/hall.png");
     source1={0.0f,0.0f,(float)mysteryTexture2.width,(float)mysteryTexture2.height};
 
 
 }
 
 void Game::UpdateCamera() {
-    camera.target = player.position;
+    if (insideClassroom) {
+        // Set the camera target and zoom for the classroom
+        camera.target = player.position;
+        camera.zoom = 1.25f; // Adjust the zoom level to fit the classroom map
 
-    if (camera.target.x < GetScreenWidth() / 2) camera.target.x = GetScreenWidth() / 2;
-    if (camera.target.y < GetScreenHeight() / 2) camera.target.y = GetScreenHeight() / 2;
-    if (camera.target.x > map.background.width - GetScreenWidth() / 2) camera.target.x = map.background.width - GetScreenWidth() / 2;
-    if (camera.target.y > map.background.height - GetScreenHeight() / 2) camera.target.y = map.background.height - GetScreenHeight() / 2;
+        // Constrain the camera within the classroom boundaries
+        float minX = 40 + GetScreenWidth() / 2 / camera.zoom;
+        float minY = 810 + GetScreenHeight() / 2 / camera.zoom;
+        float maxX = 2165 - GetScreenWidth() / 2 / camera.zoom;
+        float maxY = 1690 - GetScreenHeight() / 2 / camera.zoom;
+
+        if (camera.target.x < minX) camera.target.x = minX;
+        if (camera.target.y < minY) camera.target.y = minY;
+        if (camera.target.x > maxX) camera.target.x = maxX;
+        if (camera.target.y > maxY) camera.target.y = maxY;
+    } else if (insideLibrary) {
+        // Set the camera target and zoom for the library
+        camera.target = player.position;
+        camera.zoom = 1.0f; // Adjust the zoom level for the library
+
+        // Constrain the camera within the library boundaries
+        float minX = 100 + GetScreenWidth() / 2 / camera.zoom;
+        float minY = 60 + GetScreenHeight() / 2 / camera.zoom;
+        float maxX = 2800 - GetScreenWidth() / 2 / camera.zoom; // Increase maxX value
+        float maxY = 2100 - GetScreenHeight() / 2 / camera.zoom;
+
+        if (camera.target.x < minX) camera.target.x = minX;
+        if (camera.target.y < minY) camera.target.y = minY;
+        if (camera.target.x > maxX) camera.target.x = maxX;
+        if (camera.target.y > maxY) camera.target.y = maxY;
+    } 
+    else if (insideHall) {
+        // Set the camera target and zoom for the hall
+        camera.target = player.position;
+        camera.zoom = 1.0f; // Adjust the zoom level for the hall
+
+        // Constrain the camera within the hall boundaries
+        float minX = 650 + GetScreenWidth() / 2 / camera.zoom;
+        float minY = 600 + GetScreenHeight() / 2 / camera.zoom;
+        float maxX = 2500- GetScreenWidth() / 2 / camera.zoom;
+        float maxY = 1800 - GetScreenHeight() / 2 / camera.zoom;
+
+        if (camera.target.x < minX) camera.target.x = minX;
+        if (camera.target.y < minY) camera.target.y = minY;
+        if (camera.target.x > maxX) camera.target.x = maxX;
+        if (camera.target.y > maxY) camera.target.y = maxY;
+    } 
+    else {
+        // Default camera behavior
+        camera.target = player.position;
+
+        if (camera.target.x < GetScreenWidth() / 2) camera.target.x = GetScreenWidth() / 2;
+        if (camera.target.y < GetScreenHeight() / 2) camera.target.y = GetScreenHeight() / 2;
+        if (camera.target.x > map.background.width - GetScreenWidth() / 2) camera.target.x = map.background.width - GetScreenWidth() / 2;
+        if (camera.target.y > map.background.height - GetScreenHeight() / 2) camera.target.y = map.background.height - GetScreenHeight() / 2;
+
+        camera.zoom = 1.0f; // Reset the zoom level to default
+    }
 }
-
-
 
 
 void Game::Run() {
@@ -179,14 +248,14 @@ void Game::Run() {
 
         float deltaTime = GetFrameTime();
         
-        if (!showConversation && !showMystery) { // Only move the player if conversation is NOT showing
-            player.Move(deltaTime);
+        if (!showConversation && !showMystery && !showcipher && !showcipher2) { // Only move the player if conversation is NOT showing
+            player.Move(deltaTime, insideLibrary, insideClassroom, insideHospital, insideCDS);
         }
 
         // Adjust the collision rectangle to better fit the player's sprite
         Rectangle playerCollisionRect = {player.position.x, player.position.y, 25, 25};
         
-        if (!insideHospital && !insideCDS && !insideLibrary && !insideClassroom) {
+        if (!insideHospital && !insideCDS && !insideLibrary && !insideClassroom && !insideHall) {
             // Perform collision detection and resolution
             ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
             ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation, conversationStep, firstCollisionOccurred);
@@ -196,11 +265,12 @@ void Game::Run() {
         }
 
 
-        if(!insideHospital && !insideCDS && !insideLibrary && !insideClassroom){
+        if(!insideHospital && !insideCDS && !insideLibrary && !insideClassroom && !insideHall){
             ResolvePlayerHospitalCollision(playerCollisionRect, hospitalRect, insideHospital, playerPositionUpdated); // Check for hospital collision
             ResolvePlayerCDSCollision(playerCollisionRect, cdsRect, insideCDS, playerPositionUpdated); // Check for CDS collision
             ResolvePlayerLibraryCollision(playerCollisionRect, libraryRect, insideLibrary, playerPositionUpdated); // Check for library collision
             ResolvePlayerClassroomCollision(playerCollisionRect, classroomRect, insideClassroom, playerPositionUpdated); // Check for library collision	
+            ResolvePlayerHallCollision(playerCollisionRect, hallRect, insideHall, playerPositionUpdated); // Check for library collision
         }
 
         if (insideHospital) {
@@ -268,16 +338,40 @@ void Game::Run() {
         }
 
         if(insideClassroom){
+
+            InsideClassroom(playerCollisionRect, classroomCollisions);
             if(IsKeyPressed(KEY_C)){
                 insideClassroom=false;
-                player.position.x=1965;
-                player.position.y=1365;
-                playerCollisionRect.x = 1965; // Update the collision rectangle position
-                playerCollisionRect.y = 1365;   // Update the collision rectangle position
+                player.position.x=1990;
+                player.position.y=1400;
+                playerCollisionRect.x = 1990; // Update the collision rectangle position
+                playerCollisionRect.y = 1400;   // Update the collision rectangle position
+
+                playerPositionUpdated=false;
+            }
+
+            //check usbFound
+            if(!usbFound){
+                ResolvePlayerUsbCollision(playerCollisionRect, usbRect, usbFound, showcipher);
+                
+            }
+
+            
+        }
+
+        if(insideHall){
+            
+            if(IsKeyPressed(KEY_C)){
+                insideHall=false;
+                player.position.x=1860;
+                player.position.y=2020;
+                playerCollisionRect.x = 1860; // Update the collision rectangle position
+                playerCollisionRect.y = 2020;   // Update the collision rectangle position
 
                 playerPositionUpdated=false;
             }
         }
+
 
         // Update player position based on the modified collision rectangle
         player.position.x = playerCollisionRect.x;
@@ -297,7 +391,7 @@ void Game::Run() {
             DrawTexture(cdsTexture, 0, 0 , WHITE); // Draw the CDS map
         }
         else if(insideLibrary){
-            DrawTexture(libraryTexture, 700, 0 , WHITE); // Draw the library map
+            DrawTexture(libraryTexture, 0, 0 , WHITE); // Draw the library map
             if(!bookFound){
                 DrawTexture(bookTexture, 1585,364, WHITE);
                 DrawRectangleLines(1585, 364, 32, 32, RED); // Draw the book's collision rectangle
@@ -312,6 +406,19 @@ void Game::Run() {
             Rectangle dest = {0, 500, 2200, 1500}; // Set the destination rectangle to the desired dimensions
             Vector2 origin = {0, 0};
             DrawTexturePro(classroomTexture, source, dest, origin, 0.0f, WHITE); // Draw the classroom map using DrawTexturePro
+            if(!usbFound){
+                Rectangle usbSource = {0.0f, 0.0f, (float)usbTexture.width, (float)usbTexture.height};
+                Rectangle usbDest = {1728, 1395, 32, 32}; // Set the destination rectangle to 50x50
+                DrawTexturePro(usbTexture, usbSource, usbDest, origin, 0.0f, WHITE);
+                DrawRectangleLines(1140,11413,100,40,RED);
+            }
+        }
+        else if(insideHall){
+            Rectangle source = {0.0f, 0.0f, (float)hallTexture.width, (float)hallTexture.height};
+            Rectangle dest = {-500, 0, 4200, 2500}; // Set the destination rectangle to 1080x1080
+            Vector2 origin = {0, 0};
+            DrawTexturePro(hallTexture, source, dest, origin, 0.0f, WHITE); // Draw the hall map using DrawTexturePro
+        
         }
         else {
             map.Draw(cameraPosition); // Draw the main map
@@ -325,12 +432,29 @@ void Game::Run() {
         }
 
         if(showMystery){
-            DrawTexture(mysteryTexture, 1100,200, WHITE);
+            DrawTexture(mysteryTexture, 700,50, WHITE);
         }
 
         if(showMystery2){
            
-            DrawTexturePro(mysteryTexture2, source1, {1350,250, (float)mysteryTexture2.width+120,(float) mysteryTexture2.height+150}, {0,0}, 0.0f, WHITE);
+           // DrawTexturePro(mysteryTexture2, source1, {1350,250, (float)mysteryTexture2.width+120,(float) mysteryTexture2.height+150}, {0,0}, 0.0f, WHITE);
+            DrawTexture(mysteryTexture2, 700,50, WHITE);
+        }
+
+
+        //cipher
+        if(showcipher){
+            DrawTexture(cipherTexture, 600,770, WHITE);
+            if(IsKeyPressed(KEY_ENTER)){
+                showcipher=false;
+                showcipher2=true;
+            }
+        }
+        else if(showcipher2){
+            DrawTexture(cipherTexture2, 600,770, WHITE);
+            if(IsKeyPressed(KEY_ENTER)){
+                showcipher2=false;
+            }
         }
 
         
@@ -448,5 +572,9 @@ void Game::Run() {
     UnloadTexture(mysteryTexture); // Unload the mystery texture
     UnloadTexture(mysteryTexture2); // Unload the mystery2 texture
     UnloadTexture(classroomTexture); // Unload the classroom texture
+    UnloadTexture(usbTexture); // Unload the USB texture
+    UnloadTexture(cipherTexture); // Unload the cipher texture
+    UnloadTexture(cipherTexture2); // Unload the cipher2 texture
+    UnloadTexture(hallTexture); // Unload the hall texture
     CloseWindow();
 }

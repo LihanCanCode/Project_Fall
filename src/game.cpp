@@ -1,5 +1,6 @@
 #include "game.h"
 #include "collision.h"
+#include "idle.h"
 #include <iostream>
 #include <vector>
 using namespace std;
@@ -34,6 +35,7 @@ Rectangle hospitalRect = {1395, 50, 280, 280}; // Define the hospital's collisio
 Rectangle cdsRect ={1390,1670,80,30};
 Rectangle libraryRect={1940,914,150,30};
 Rectangle bookRect = {1585,364,32,32}; // Define the book's collision rectangle
+Rectangle classroomRect ={1965,1355,100,40};
 
 //Inside Hospital Rectangles
 vector<Rectangle> hospitalCollisions = {
@@ -53,6 +55,21 @@ vector<Rectangle> hospitalCollisions = {
     {1274,287,210,70}
 };
 
+vector<Rectangle> libraryCOllisions ={
+    {1450,56,750,84},
+    {740,56,625,84},
+    {740,145,115,495},
+    {1950,145,250,45},
+    {757,727,95,284},
+    {727,1100,123,550},
+    {727,1750,122,253},
+    {850,1912,161,1003},
+    {1970,895,230,580}
+};
+
+vector<Rectangle> classroomCollisions ={
+    {}
+};
 
 
 
@@ -74,6 +91,10 @@ Game::Game() {
     keyFound = false;  // Initialize the key found flag
     keyVisible = false; // Initialize the key visibility flag
     bookFound = false; // Initialize the book found flag
+    showMystery= false;
+    showMystery2= false;
+    insideClassroom=false;
+
 }
 
 void Game::Initialize() {
@@ -99,6 +120,9 @@ void Game::Initialize() {
     SetTargetFPS(60);
     initialized = true;
 
+    
+       
+
     // Load the conversation textures
     conversationTexture1 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation1.png");
     conversationTexture2 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/conversation2.png");
@@ -109,6 +133,10 @@ void Game::Initialize() {
     libraryTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/library.png");
     cdsTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/cds.png");
     bookTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/book.png");
+    mysteryTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/mystery.png");
+    mysteryTexture2 = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/mystery2.png");
+    classroomTexture = LoadTexture("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/classroom.png");
+    source1={0.0f,0.0f,(float)mysteryTexture2.width,(float)mysteryTexture2.height};
 
 
 }
@@ -151,14 +179,14 @@ void Game::Run() {
 
         float deltaTime = GetFrameTime();
         
-        if (!showConversation) { // Only move the player if conversation is NOT showing
+        if (!showConversation && !showMystery) { // Only move the player if conversation is NOT showing
             player.Move(deltaTime);
         }
 
         // Adjust the collision rectangle to better fit the player's sprite
         Rectangle playerCollisionRect = {player.position.x, player.position.y, 25, 25};
         
-        if (!insideHospital && !insideCDS && !insideLibrary) {
+        if (!insideHospital && !insideCDS && !insideLibrary && !insideClassroom) {
             // Perform collision detection and resolution
             ResolvePlayerBuildingCollision(playerCollisionRect, buildings);
             ResolvePlayerIdleCollision(playerCollisionRect, idleRect, conversationPosition, showConversation, conversationStep, firstCollisionOccurred);
@@ -168,10 +196,11 @@ void Game::Run() {
         }
 
 
-        if(!insideHospital && !insideCDS && !insideLibrary){
+        if(!insideHospital && !insideCDS && !insideLibrary && !insideClassroom){
             ResolvePlayerHospitalCollision(playerCollisionRect, hospitalRect, insideHospital, playerPositionUpdated); // Check for hospital collision
             ResolvePlayerCDSCollision(playerCollisionRect, cdsRect, insideCDS, playerPositionUpdated); // Check for CDS collision
             ResolvePlayerLibraryCollision(playerCollisionRect, libraryRect, insideLibrary, playerPositionUpdated); // Check for library collision
+            ResolvePlayerClassroomCollision(playerCollisionRect, classroomRect, insideClassroom, playerPositionUpdated); // Check for library collision	
         }
 
         if (insideHospital) {
@@ -226,10 +255,27 @@ void Game::Run() {
                 playerPositionUpdated=false;
             }
             
+            InsideLibrary(playerCollisionRect, libraryCOllisions);
             //check bookfound
             
             if(!bookFound){
                 ResolvePlayerBookCollision(playerCollisionRect, bookRect, bookFound);
+                if(bookFound){
+                    showMystery=true;
+                    //mysteryPosition={1500,350};
+                }
+            }
+        }
+
+        if(insideClassroom){
+            if(IsKeyPressed(KEY_C)){
+                insideClassroom=false;
+                player.position.x=1965;
+                player.position.y=1365;
+                playerCollisionRect.x = 1965; // Update the collision rectangle position
+                playerCollisionRect.y = 1365;   // Update the collision rectangle position
+
+                playerPositionUpdated=false;
             }
         }
 
@@ -261,14 +307,34 @@ void Game::Run() {
                 DrawRectangleLines(bookRect.x, bookRect.y, 32, 32, RED); // Draw the book's collision rectangle
             }*/
         }
+        else if(insideClassroom) {
+            Rectangle source = {0.0f, 0.0f, (float)classroomTexture.width, (float)classroomTexture.height};
+            Rectangle dest = {0, 500, 2200, 1500}; // Set the destination rectangle to the desired dimensions
+            Vector2 origin = {0, 0};
+            DrawTexturePro(classroomTexture, source, dest, origin, 0.0f, WHITE); // Draw the classroom map using DrawTexturePro
+        }
         else {
             map.Draw(cameraPosition); // Draw the main map
         }
         player.Draw(cameraPosition);
+
         
-        Image gg = LoadImage("C:/Users/Lihan/Desktop/Semester 2-1/Oop Lab/Project_Fall/Project_Fall/src/idle.png");
-        Texture2D texture = LoadTextureFromImage(gg);
-        Rectangle source = {0.0f, 0.0f, (float)texture.width-10, (float)texture.height};
+        if (!insideHospital && !insideCDS && !insideLibrary && !insideClassroom) {
+           // DrawTexturePro(Texture, source, {idleRect.x, idleRect.y, idleRect.width, idleRect.height}, {idleRect.width / 2, idleRect.height / 2}, 0.0f, WHITE);
+            idle.Draw(cameraPosition);
+        }
+
+        if(showMystery){
+            DrawTexture(mysteryTexture, 1100,200, WHITE);
+        }
+
+        if(showMystery2){
+           
+            DrawTexturePro(mysteryTexture2, source1, {1350,250, (float)mysteryTexture2.width+120,(float) mysteryTexture2.height+150}, {0,0}, 0.0f, WHITE);
+        }
+
+        
+        
         
         //drawing rectangle for collision check
         DrawRectangleLines(idleRect.x, idleRect.y, idleRect.width, idleRect.height, RED);
@@ -313,15 +379,13 @@ void Game::Run() {
             }
         }
 
+
         // Draw the key if it is visible and has not been found
         if (keyVisible && !keyFound) {
             DrawTexture(keyTexture, keyRect.x, keyRect.y, WHITE);
             DrawRectangleLines(keyRect.x, keyRect.y, 32, 32, RED); // Draw the key's collision rectangle
         }
 
-        if(!insideHospital && !insideCDS && !insideLibrary){
-            DrawTexturePro(texture, source, idleRect, {0, 0}, 0.0f, WHITE);
-        }
         EndMode2D();
 
         if (showDebugInfo) {
@@ -335,7 +399,9 @@ void Game::Run() {
         DrawText(TextFormat("Inside Hospital: %s", insideHospital ? "YES" : "NO"), GetScreenWidth() - 200, 80, 20, BLACK);
         DrawText(TextFormat("Inside CDS: %s", insideCDS ? "YES" : "NO"), GetScreenWidth() - 200, 110, 20, BLACK);
         DrawText(TextFormat("Inside Library: %s", insideLibrary ? "YES" : "NO"), GetScreenWidth() - 200, 140, 20, BLACK);
+        DrawText(TextFormat("Inside Classroom: %s", insideClassroom ? "YES" : "NO"), GetScreenWidth() - 200, 170, 20, BLACK);
 
+        
         // If Enter is pressed, switch to the next conversation step or hide the conversation
         if (showConversation && IsKeyPressed(KEY_ENTER)) {
             if (conversationStep == 0) {
@@ -353,12 +419,23 @@ void Game::Run() {
             }
         }
 
+        // If the key is found, hide it
+        if(showMystery && IsKeyPressed(KEY_ENTER)){
+            showMystery=false;
+            showMystery2=true;
+        }
+        else if(showMystery2 && IsKeyPressed(KEY_ENTER)){
+            showMystery2=false;
+        }
+
+
         EndDrawing();
     }
 
     map.Unload();
     player.Unload();
     idle.Unload(); // Unload the idle character texture
+    
     UnloadTexture(conversationTexture1); // Unload the first conversation texture
     UnloadTexture(conversationTexture2); // Unload the second conversation texture
     UnloadTexture(conversationTexture3); // Unload the third conversation texture
@@ -368,5 +445,8 @@ void Game::Run() {
     UnloadTexture(libraryTexture); // Unload the library texture
     UnloadTexture(cdsTexture); // Unload the CDS texture
     UnloadTexture(bookTexture); // Unload the book texture
+    UnloadTexture(mysteryTexture); // Unload the mystery texture
+    UnloadTexture(mysteryTexture2); // Unload the mystery2 texture
+    UnloadTexture(classroomTexture); // Unload the classroom texture
     CloseWindow();
 }

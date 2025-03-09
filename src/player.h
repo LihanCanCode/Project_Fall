@@ -39,7 +39,7 @@ public:
     Player();
     virtual void LoadTextures();
     void UpdateDirection();
-    virtual void Move(float deltaTime);
+    virtual void Move(float deltaTime, bool insideLibrary, bool insideClassroom, bool insideHospital, bool insideCDS);
     int GetDirectionRow();
     virtual void Draw(Vector2 cameraPosition);
     void Unload();

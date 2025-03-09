@@ -80,6 +80,8 @@ void ResolvePlayerKeyCollision(Rectangle& playerRect, Rectangle& keyRect, bool& 
     }
 }
 
+
+
 void ResolvePlayerBookCollision(Rectangle& playerRect, Rectangle& keyRect, bool& bookFound) {
     float overlapX = (playerRect.x + playerRect.width / 2) - (keyRect.x + keyRect.width / 2);
     float overlapY = (playerRect.y + playerRect.height / 2) - (keyRect.y + keyRect.height / 2);
@@ -92,6 +94,19 @@ void ResolvePlayerBookCollision(Rectangle& playerRect, Rectangle& keyRect, bool&
     }
 }
 
+void ResolvePlayerUsbCollision(Rectangle& playerRect, Rectangle& usbRect, bool& usbFound, bool& showcipher) {
+    float overlapX = (playerRect.x + playerRect.width / 2) - (usbRect.x + usbRect.width / 2);
+    float overlapY = (playerRect.y + playerRect.height / 2) - (usbRect.y + usbRect.height / 2);
+    float halfWidthSum = (playerRect.width + usbRect.width) / 2;
+    float halfHeightSum = (playerRect.height + usbRect.height) / 2;
+
+    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+        std::cout << "Collision with usb detected!" << std::endl;
+        usbFound = true;
+        showcipher = true; // Show the cipher when the USB is found
+    }
+}
+
 void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hospitalRect, bool& insideHospital, bool& playerPositionUpdated) {
     float overlapX = (playerRect.x + playerRect.width / 2) - (hospitalRect.x + hospitalRect.width / 2);
     float overlapY = (playerRect.y + playerRect.height / 2) - (hospitalRect.y + hospitalRect.height / 2);
@@ -101,6 +116,24 @@ void ResolvePlayerHospitalCollision(Rectangle& playerRect, const Rectangle& hosp
     if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
         std::cout << "Collision with hospital detected!" << std::endl;
         insideHospital = true;
+
+        if (!playerPositionUpdated) {
+            playerRect.x = 1259;
+            playerRect.y = 56;
+            playerPositionUpdated = true;
+        }
+    }
+}
+
+void ResolvePlayerHallCollision(Rectangle& playerRect, const Rectangle& hallRect, bool& insideHall, bool& playerPositionUpdated) {
+    float overlapX = (playerRect.x + playerRect.width / 2) - (hallRect.x + hallRect.width / 2);
+    float overlapY = (playerRect.y + playerRect.height / 2) - (hallRect.y + hallRect.height / 2);
+    float halfWidthSum = (playerRect.width + hallRect.width) / 2;
+    float halfHeightSum = (playerRect.height + hallRect.height) / 2;
+
+    if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+        std::cout << "Collision with hall detected!" << std::endl;
+        insideHall = true;
 
         if (!playerPositionUpdated) {
             playerRect.x = 1259;
@@ -197,6 +230,34 @@ void InsideHospital(Rectangle& playerRect, const std::vector<Rectangle>& hospita
 
 void InsideLibrary(Rectangle& playerRect, const std::vector<Rectangle>& libraryCollisions) {
     for (const auto& rect : libraryCollisions) {
+        float overlapX = (playerRect.x + playerRect.width / 2) - (rect.x + rect.width / 2);
+        float overlapY = (playerRect.y + playerRect.height / 2) - (rect.y + rect.height / 2);
+        float halfWidthSum = (playerRect.width + rect.width) / 2;
+        float halfHeightSum = (playerRect.height + rect.height) / 2;
+
+        if (fabs(overlapX) < halfWidthSum && fabs(overlapY) < halfHeightSum) {
+            float penetrationX = halfWidthSum - fabs(overlapX);
+            float penetrationY = halfHeightSum - fabs(overlapY);
+
+            if (penetrationX < penetrationY) {
+                if (overlapX > 0) {
+                    playerRect.x += penetrationX;
+                } else {
+                    playerRect.x -= penetrationX;
+                }
+            } else {
+                if (overlapY > 0) {
+                    playerRect.y += penetrationY;
+                } else {
+                    playerRect.y -= penetrationY;
+                }
+            }
+        }
+    }
+}
+
+void InsideClassroom(Rectangle& playerRect, const std::vector<Rectangle>& classroomCollisions) {
+    for (const auto& rect : classroomCollisions) {
         float overlapX = (playerRect.x + playerRect.width / 2) - (rect.x + rect.width / 2);
         float overlapY = (playerRect.y + playerRect.height / 2) - (rect.y + rect.height / 2);
         float halfWidthSum = (playerRect.width + rect.width) / 2;

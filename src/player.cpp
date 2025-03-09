@@ -3,7 +3,7 @@
 
 Player::Player() {
     position = {135, 2200};
-    speed = 100.0f;
+    speed = 300.0f;
     currentDirection = DOWN;
     lastDirection = DOWN;
     isMoving = false;
@@ -60,7 +60,7 @@ void Player::UpdateDirection() {
     lastDirection = currentDirection;
 }
 
-void Player::Move(float deltaTime) {
+void Player::Move(float deltaTime, bool insideLibrary, bool insideClassroom, bool insideHospital, bool insideCDS) {
     Vector2 movement = {0, 0};
 
     if (IsKeyDown(KEY_RIGHT)) movement.x += 1;
@@ -76,11 +76,12 @@ void Player::Move(float deltaTime) {
     position.x += movement.x * speed * deltaTime;
     position.y += movement.y * speed * deltaTime;
 
-    if (position.x < 50) position.x = 50;
-    if (position.y < 56) position.y = 56;
-    if (position.x > 2200) position.x = 2200;
-    if (position.y > 2200) position.y = 2200;
-
+   if(!insideLibrary && !insideClassroom && !insideHospital && !insideCDS){   
+        if (position.x < 50) position.x = 50;
+        if (position.y < 56) position.y = 56;
+        if (position.x > 2200) position.x = 2200;
+        if (position.y > 2200) position.y = 2200;
+    }
     UpdateDirection();
 
     if (isMoving) {
